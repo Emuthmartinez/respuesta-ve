@@ -173,10 +173,10 @@ const XPOZ_QUERIES = [
   'Venezuela earthquake building collapsed 2026',
 ];
 
-async function fetchXpoz(env: Env): Promise<RawItem[]> {
+async function fetchXpoz(env: Env, queries: string[] = XPOZ_QUERIES): Promise<RawItem[]> {
   if (!env.XPOZ_ACCESS_KEY) return [];
   const items: RawItem[] = [];
-  for (const query of XPOZ_QUERIES) {
+  for (const query of queries) {
     try {
       const res = await fetch('https://mcp.xpoz.ai/mcp', {
         method: 'POST',
@@ -342,7 +342,8 @@ export default {
       }
     }
     if (url.pathname === '/debug') {
-      const [news, social] = await Promise.all([fetchNews(), fetchXpoz(env)]);
+      // Lightweight: one xpoz query only (the cron runs all of them via waitUntil).
+      const [news, social] = await Promise.all([fetchNews(), fetchXpoz(env, XPOZ_QUERIES.slice(0, 1))]);
       return Response.json({
         news_items: news.length,
         social_items: social.length,
