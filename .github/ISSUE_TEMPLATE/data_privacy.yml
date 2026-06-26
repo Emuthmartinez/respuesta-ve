@@ -1,0 +1,42 @@
+name: Data correction or privacy concern
+description: Flag public data that may be wrong, stale, duplicated, or too revealing.
+title: "[Data/privacy]: "
+labels: ["data", "privacy"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste private contact info, precise coordinates, cedulas, credentials, or raw photos. Use public link-backs and coarse descriptions only.
+  - type: dropdown
+    id: data_type
+    attributes:
+      label: Data type
+      options:
+        - Missing-persons record
+        - Building damage report
+        - Donation center
+        - Organization listing
+        - Misinformation disclosure
+        - Skills / needs listing
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: public_reference
+    attributes:
+      label: Public reference
+      description: Share a public URL, public source name, or coarse location. Avoid private person-level details.
+    validations:
+      required: true
+  - type: textarea
+    id: concern
+    attributes:
+      label: Concern
+      description: What seems wrong, stale, duplicated, unsafe, or too revealing?
+    validations:
+      required: true
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested fix
+      description: What should change publicly?

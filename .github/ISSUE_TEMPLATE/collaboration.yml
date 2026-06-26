@@ -1,0 +1,51 @@
+name: Collaboration / integration
+description: Coordinate with another registry, map, aid group, responder workflow, or API client.
+title: "[Collaboration]: "
+labels: ["collaboration"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not paste private contact info, precise coordinates, cedulas, raw photos, credentials, or access tokens.
+  - type: input
+    id: org
+    attributes:
+      label: Organization or project
+      description: Name and public link, if available.
+      placeholder: Localizados Venezuela / public URL
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Collaboration area
+      options:
+        - Missing-persons federation
+        - Damage reports / map
+        - Donation directory
+        - Responder coordination
+        - Skills / needs marketplace
+        - API / MCP integration
+        - Documentation / translation
+    validations:
+      required: true
+  - type: textarea
+    id: exchange
+    attributes:
+      label: What can we exchange?
+      description: Describe public fields, link-backs, API docs, cadence, and privacy constraints.
+      placeholder: We can provide public record IDs, names, coarse location, status, source URLs...
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Safety or privacy constraints
+      description: Keep this high-level. Do not include private person-level details.
+    validations:
+      required: true
+  - type: textarea
+    id: next_step
+    attributes:
+      label: Useful next step
+      placeholder: Review API shape, schedule data mapping, add source adapter, validate status sync...

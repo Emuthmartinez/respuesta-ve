@@ -10,11 +10,6 @@
   "kv_namespaces": [
     { "binding": "DEDUP", "id": "a17a7f84aecd4aab88800a40e062e605" }
   ],
-  "vars": {
-    "SUPABASE_URL": "https://jbjkruxxihtsiapmchcy.supabase.co",
-    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpiamtydXh4aWh0c2lhcG1jaGN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTc1NTQsImV4cCI6MjA5Nzk3MzU1NH0.XPogY5xhmCMMAMxr_e2JIlwVjh9iScjILaMO4ZO2VNQ",
-    "RUN_TOKEN": "rve-ingest-9f2c7a1d4b6e"
-  },
   "observability": {
     "enabled": true
   }

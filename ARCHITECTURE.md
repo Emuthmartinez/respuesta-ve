@@ -72,4 +72,4 @@ pnpm dev
 ```
 
 Database changes live in `supabase/migrations/`. They are **not** applied to a
-remote project until the team OKs provisioning (cost).
+remote project until reviewed and coordinated with the live deployment owner.

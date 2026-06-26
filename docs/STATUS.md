@@ -52,9 +52,9 @@ partner-API + coordinator dedup-desk feature landed concurrently as
 - [ ] **`INGEST_TOKEN` Worker secret** — the personas ingest route
       (`/api/personas/ingest`) is token-gated; production needs the secret set
       via `wrangler secret put` (currently only a dev value in `.env.local`).
-- [ ] **`ingest-worker` `RUN_TOKEN`** is committed in cleartext in
-      `ingest-worker/wrangler.jsonc` — fine while the repo is private, but migrate
-      to `wrangler secret` before the repo goes public.
+- [ ] **`ingest-worker` runtime env** — set `SUPABASE_URL`,
+      `SUPABASE_ANON_KEY`, and `RUN_TOKEN` in Cloudflare before deploy
+      (`RUN_TOKEN` must be a secret; see `ingest-worker/README.md`).
 - [ ] **`X_BEARER` secret** on `ingest-worker` if/when enabling X scanning
       (pre-wired, currently disabled).
 
@@ -94,8 +94,8 @@ These were confirmed real but accepted as low-risk for launch; revisit under loa
 
 ## Notes for whoever picks this up
 
-- The coordinator account `e.muth.martinez@gmail.com` is pre-provisioned (verified
-  senior, `is_coordinator = true`).
+- A coordinator account is pre-provisioned in the live project. Keep personal
+  account details out of public issues and tracked docs.
 - Before sharing any URL, confirm no sample/test rows are public:
   `delete from public.buildings where is_sample_data;`
 - After any schema change, run the Supabase advisors and confirm only the

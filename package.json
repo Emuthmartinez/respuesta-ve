@@ -1,12 +1,15 @@
 {
-  "name": "venezuela",
+  "name": "respuesta-ve",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test:logic": "node --loader ./scripts/test/alias-loader.mjs lib/missing-persons.test.mjs && node --loader ./scripts/test/alias-loader.mjs lib/api/api.test.mjs",
     "cf-build": "opennextjs-cloudflare build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",

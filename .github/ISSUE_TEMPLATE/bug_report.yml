@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a reproducible issue without exposing private data.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include private contact info, precise coordinates, cedulas, credentials, or raw missing-person photos.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Public damage map
+        - Report form
+        - Missing-persons search
+        - Donation directory
+        - Skills / needs marketplace
+        - Volunteer / coordinator dashboard
+        - Partner API / MCP
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use demo/sample data when possible.
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device/browser
+      placeholder: iPhone Safari, Android Chrome, desktop Firefox...

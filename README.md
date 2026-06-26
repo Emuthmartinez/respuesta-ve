@@ -19,6 +19,23 @@ pnpm dev                           # http://localhost:3000
 The app runs without Supabase configured (it falls back to sample data), so you
 can start the dev server before provisioning.
 
+## Collaborate
+
+This project is meant to interoperate with other Venezuela-response efforts, not
+replace them. If you run a missing-persons registry, damage map, donation list,
+or responder coordination tool, open a **Collaboration / integration** issue and
+tell us what data you can exchange and what privacy constraints you need.
+
+- Missing-persons federation uses source link-backs and advisory duplicate
+  signals; coordinators review merges, and the app never auto-merges records.
+- Public map/API surfaces must not expose precise coordinates, private contact
+  info, cedula values, or raw photos from federated records.
+- Good first contributions are usually documentation, translation, accessibility,
+  API-client examples, source adapters, and small UI fixes.
+
+For repo setup and safety rules, see [CONTRIBUTING.md](CONTRIBUTING.md). For
+private vulnerability reports, see [SECURITY.md](SECURITY.md).
+
 ## Stack
 
 Next.js 16 (App Router, Turbopack) · React 19 · Tailwind v4 · Supabase
@@ -34,6 +51,8 @@ OpenNext (`pnpm run deploy`).
   agents alike).
 - **[docs/STATUS.md](docs/STATUS.md)** — what's shipped, launch gates, and the
   remaining-work backlog.
+- **[docs/PUBLICATION_CHECKLIST.md](docs/PUBLICATION_CHECKLIST.md)** — final
+  checks before flipping the GitHub repository to public.
 
 ## Privacy & safety
 
@@ -41,3 +60,7 @@ Precise coordinates and contact info are stored but **never** exposed publicly �
 the public reads only fuzzed `*_public` views. Community damage reports and
 responder placards are **coordination aids, not official certifications**; the UI
 always directs users to Protección Civil / Bomberos for authoritative decisions.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

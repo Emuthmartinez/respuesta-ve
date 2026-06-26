@@ -1,0 +1,34 @@
+name: Good first task
+description: Suggest a small public contribution for new collaborators.
+title: "[Good first task]: "
+labels: ["good first issue"]
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: Task
+      description: Keep this small and safe for a first-time contributor.
+      placeholder: Add docs, improve translation, add an API example, fix accessible label...
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Likely files or route
+      placeholder: README.md, app/desarrolladores/page.tsx, components/...
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: What should be true when this is done?
+    validations:
+      required: true
+  - type: checkboxes
+    id: safe
+    attributes:
+      label: Safety check
+      options:
+        - label: This does not expose private data, precise coordinates, or contact info.
+          required: true
+        - label: This does not change moderation, responder access, RLS, or crisis-triage behavior.
+          required: true

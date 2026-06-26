@@ -29,8 +29,12 @@ Si estas variables ya están en tu entorno de shell puedes omitir el export.
 
 ```sh
 export PATH="$HOME/.local/bin:$HOME/.agent-reach-venv/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
-export SUPABASE_URL="https://jbjkruxxihtsiapmchcy.supabase.co"
-export SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpiamtydXh4aWh0c2lhcG1jaGN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTc1NTQsImV4cCI6MjA5Nzk3MzU1NH0.XPogY5xhmCMMAMxr_e2JIlwVjh9iScjILaMO4ZO2VNQ"
+set -a
+[ -f .env.local ] && . ./.env.local
+set +a
+export SUPABASE_URL="${SUPABASE_URL:-${NEXT_PUBLIC_SUPABASE_URL:-}}"
+export SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}}"
+test -n "$SUPABASE_URL" && test -n "$SUPABASE_ANON_KEY"
 ```
 
 El directorio de trabajo de los scripts es:

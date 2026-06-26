@@ -41,6 +41,15 @@ yarn-error.log*
 /.wrangler/
 .dev.vars
 
+# supabase local link/cache metadata
+supabase/.temp/
+
+# local assistant/runtime config
+.claude/settings.local.json
+.claude/launch.json
+.claude/skills/respuesta-ingest/run-tick.sh
+.claude/skills/respuesta-ingest/*.plist
+
 # local ingest pipeline state
 .respuesta-ingest/
 
