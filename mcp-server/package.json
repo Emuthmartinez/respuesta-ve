@@ -1,0 +1,12 @@
+{
+  "name": "respuesta-ve-dedup-mcp",
+  "version": "1.0.0",
+  "description": "MCP server exposing the Respuesta VE missing-person dedup/matching API as agent tools.",
+  "type": "module",
+  "bin": { "respuesta-ve-dedup-mcp": "./index.mjs" },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.4.0",
+    "zod": "^3.23.8"
+  }
+}

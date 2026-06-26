@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "ingest-worker", ".open-next"]
+  "exclude": ["node_modules", "ingest-worker", ".open-next", "mcp-server", "scripts"]
 }
