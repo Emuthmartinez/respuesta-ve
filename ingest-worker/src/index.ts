@@ -9,6 +9,9 @@ interface Env {
   SUPABASE_ANON_KEY: string;
   RUN_TOKEN: string;
   X_BEARER?: string; // optional: set via `wrangler secret put X_BEARER` to enable X
+  // optional: set via `wrangler secret put XPOZ_ACCESS_KEY` to enable social scan.
+  // The durable xpoz access key (xpoz dashboard / getUserAccessKey) — never expires.
+  XPOZ_ACCESS_KEY?: string;
 }
 
 interface Lead {
@@ -158,6 +161,118 @@ async function fetchX(env: Env): Promise<RawItem[]> {
   }
 }
 
+// xpoz social scan — calls the xpoz MCP server directly over HTTPS (Streamable
+// HTTP, Bearer auth). No MCP runtime needed: a single JSON-RPC tools/call POST
+// returns the result inline as an SSE `data:` line. This is the always-on
+// equivalent of the Mac orchestrator's social.mjs leg.
+const XPOZ_QUERIES = [
+  'terremoto Venezuela edificio colapso',
+  'sismo Venezuela derrumbe escombros',
+  'terremoto Venezuela atrapados rescate',
+  'colapso La Guaira Caraballeda Macuto',
+  'Venezuela earthquake building collapsed 2026',
+];
+
+async function fetchXpoz(env: Env): Promise<RawItem[]> {
+  if (!env.XPOZ_ACCESS_KEY) return [];
+  const items: RawItem[] = [];
+  for (const query of XPOZ_QUERIES) {
+    try {
+      const res = await fetch('https://mcp.xpoz.ai/mcp', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${env.XPOZ_ACCESS_KEY}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json, text/event-stream',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'getTwitterPostsByKeywords',
+            arguments: {
+              query,
+              limit: 25,
+              language: 'es',
+              filterOutRetweets: true,
+              fields: ['id', 'text', 'authorUsername', 'createdAtDate'],
+            },
+          },
+        }),
+      });
+      if (!res.ok) continue;
+      const text = extractMcpText(await res.text());
+      for (const row of parseXpozCompact(text)) {
+        if (!row.id || !row.text) continue;
+        const handle = row.authorUsername || '';
+        items.push({
+          title: row.text,
+          description: '',
+          link: handle ? `https://x.com/${handle}/status/${row.id}` : `https://x.com/i/web/status/${row.id}`,
+        });
+      }
+    } catch {
+      // fail soft per query — one bad call must not drop the rest
+    }
+  }
+  return items;
+}
+
+// Pull result.content[0].text out of an MCP Streamable-HTTP response (the body is
+// `event: message\ndata: {jsonrpc…}` SSE, or occasionally a bare JSON object).
+function extractMcpText(body: string): string {
+  let jsonStr = body.trim();
+  const dataLine = body.split('\n').find((l) => l.startsWith('data:'));
+  if (dataLine) jsonStr = dataLine.slice(5).trim();
+  try {
+    const env = JSON.parse(jsonStr) as { result?: { content?: { text?: string }[] } };
+    return env.result?.content?.[0]?.text ?? '';
+  } catch {
+    return '';
+  }
+}
+
+// Parse the xpoz compact `results[N]{cols}: "v1","v2"` shape into row objects.
+// (Scalar fields only are requested, so xpoz always returns this compact form —
+// the YAML-list form is only triggered by array fields, which we don't request.)
+function parseXpozCompact(text: string): Record<string, string>[] {
+  if (!text || /^status:\s*error/im.test(text)) return [];
+  const lines = text.split('\n');
+  const hi = lines.findIndex((l) => /results\[\d+\]\{[^}]*\}\s*:/.test(l));
+  if (hi === -1) return [];
+  const cols = (lines[hi].match(/\{([^}]*)\}/)?.[1] ?? '').split(',').map((c) => c.trim()).filter(Boolean);
+  if (!cols.length) return [];
+  const rows: Record<string, string>[] = [];
+  for (let i = hi + 1; i < lines.length; i++) {
+    const raw = lines[i];
+    if (!raw.trim()) continue;
+    if (/^\S/.test(raw) && !raw.trim().startsWith('"')) break;
+    const fields = parseCsvRow(raw.trim());
+    const obj: Record<string, string> = {};
+    cols.forEach((c, idx) => { obj[c] = fields[idx] ?? ''; });
+    if (obj.id || obj.text) rows.push(obj);
+  }
+  return rows;
+}
+
+function parseCsvRow(line: string): string[] {
+  const out: string[] = [];
+  let cur = '', inQ = false, quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '\\' && i + 1 < line.length) { const n = line[++i]; cur += n === 'n' ? '\n' : n === 't' ? '\t' : n; }
+      else if (c === '"') inQ = false;
+      else cur += c;
+    } else if (c === '"') { inQ = true; quoted = true; }
+    else if (c === ',') { out.push(quoted ? cur : cur.trim()); cur = ''; quoted = false; }
+    else cur += c;
+  }
+  out.push(quoted ? cur : cur.trim());
+  return out;
+}
+
 async function insertLead(env: Env, lead: Lead): Promise<boolean> {
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/buildings`, {
     method: 'POST',
@@ -173,7 +288,7 @@ async function insertLead(env: Env, lead: Lead): Promise<boolean> {
 }
 
 async function runIngest(env: Env): Promise<{ scanned: number; inserted: number; skipped: number }> {
-  const items = [...(await fetchNews()), ...(await fetchX(env))];
+  const items = [...(await fetchNews()), ...(await fetchX(env)), ...(await fetchXpoz(env))];
   let inserted = 0;
   let skipped = 0;
   for (const it of items) {
