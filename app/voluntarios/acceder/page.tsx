@@ -52,8 +52,15 @@ export default function AccederPage() {
       options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/voluntarios` },
     });
     setLoading(false);
-    if (error) setErr(error.message);
-    else setSent(true);
+    if (error) {
+      console.error('signInWithOtp error:', error);
+      setErr(
+        error.message ||
+          (locale === 'en'
+            ? 'Could not send the sign-in link. Check the email and try again in a few minutes.'
+            : 'No se pudo enviar el enlace de acceso. Revisa el correo e inténtalo de nuevo en unos minutos.'),
+      );
+    } else setSent(true);
   }
 
   return (
