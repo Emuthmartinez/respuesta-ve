@@ -14,7 +14,7 @@ const STR = {
   es: {
     heading: 'Personas desaparecidas',
     subtext:
-      'Reunimos los registros que ya existen en otras plataformas y los deduplicamos: agrupamos los reportes repetidos de una misma persona, sin borrar ninguno. Cada reporte enlaza a su fuente.',
+      'Reunimos registros de otras plataformas, filtramos entradas sospechosas antes de publicarlas y deduplicamos sin borrar ninguno. Los casos con cédula aparecen primero; cada reporte enlaza a su fuente.',
     statTotal: 'reportes reunidos',
     statPeople: 'personas distintas (aprox.)',
     statFound: 'localizados',
@@ -28,7 +28,7 @@ const STR = {
   en: {
     heading: 'Missing people',
     subtext:
-      'We gather the records that already exist on other platforms and deduplicate them: repeated reports of the same person are grouped together, none deleted. Every report links back to its source.',
+      'We gather records from other platforms, hold suspicious entries for review before publication, and deduplicate without deleting any record. National-ID cases appear first; every report links back to its source.',
     statTotal: 'reports gathered',
     statPeople: 'distinct people (approx.)',
     statFound: 'located',

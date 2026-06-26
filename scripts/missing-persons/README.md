@@ -24,6 +24,13 @@ localities and photos with a **multi-signal cascade**:
    corroboration), gated on ≥2 shared tokens **and given-name agreement** (so
    *Ángel Gavidia* and *Aris Gavidia* — family — never merge).
 
+Before a row can appear publicly, `assessMissingRecordQuality()` also checks
+the intake quality. Initials-only names, placeholder/test rows, fictional/meme
+names, missing source links, and weak single-token identities are stored with
+`quality_status='needs_review'`; coordinators can accept or reject them later.
+Those rows do not enter public search/API results or dedup clusters until
+accepted.
+
 Two presentation tiers, as required: **Identificados** (cédula) vs **Agrupación
 aproximada** (everything else). See `lib/missing-persons.test.mjs` for the guards.
 
@@ -55,9 +62,12 @@ node scripts/missing-persons/dedup-ingest.mjs --ingest   # write via RPC
 
 `dedup-ingest.mjs` reads `DATA_DIR` (default `./data`) and the repo `.env.local`
 for `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`. It ingests via
-`submit_missing_person_record` using a `federation-*` identity (throttle-exempt),
+`submit_missing_person_record` using `FEDERATION_BYPASS_TOKEN` when available,
 inserting clusters concurrently but members sequentially so edges reference
 already-inserted neighbours (one pass, correct union-find).
+
+Low-quality records are still ingested for review, but they are skipped during
+batch edge-building so they cannot contaminate duplicate clusters.
 
 ## What is dropped on ingest (privacy)
 

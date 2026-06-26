@@ -23,6 +23,8 @@ interface Row {
   cedula_conflict?: boolean;
   photo_conflict?: boolean;
   conflict_kind?: string;
+  quality_status?: string;
+  quality_flags?: string[] | null;
   created_at: string;
 }
 interface AuditRow {
@@ -45,9 +47,9 @@ const statusColor: Record<string, string> = {
 
 const STR = {
   es: {
-    tabs: { clusters: 'Grupos', conflicts: 'Conflictos', audit: 'Historial' },
+    tabs: { clusters: 'Grupos', conflicts: 'Conflictos', quality: 'Calidad', audit: 'Historial' },
     search: 'Buscar por nombre…', loading: 'Cargando…', refresh: 'Actualizar',
-    noClusters: 'No hay grupos para revisar.', noConflicts: 'No hay conflictos pendientes.', noAudit: 'Sin acciones registradas.',
+    noClusters: 'No hay grupos para revisar.', noConflicts: 'No hay conflictos pendientes.', noQuality: 'No hay registros en cuarentena.', noAudit: 'Sin acciones registradas.',
     members: (n: number) => `${n} registros`,
     keepThis: 'Mantener este', merged: 'Fusionado', undo: 'Deshacer fusión',
     mergeBtn: 'Fusionar duplicados en el principal', splitBtn: 'No es la misma persona',
@@ -57,12 +59,14 @@ const STR = {
     overrideYes: 'Sí, fusionar igual', cancel: 'Cancelar',
     markReviewed: 'Marcar revisado', reasonPrompt: 'Motivo (opcional):',
     conflictCedula: 'Misma cédula, nombres distintos', conflictPhoto: 'Misma foto, nombres distintos',
+    acceptQuality: 'Aceptar y publicar', rejectQuality: 'Rechazar como spam',
+    qualityFlags: 'Señales',
     merge: 'fusión', unmerge: 'reversión', done: 'Listo.',
   },
   en: {
-    tabs: { clusters: 'Groups', conflicts: 'Conflicts', audit: 'History' },
+    tabs: { clusters: 'Groups', conflicts: 'Conflicts', quality: 'Quality', audit: 'History' },
     search: 'Search by name…', loading: 'Loading…', refresh: 'Refresh',
-    noClusters: 'No groups to review.', noConflicts: 'No pending conflicts.', noAudit: 'No recorded actions.',
+    noClusters: 'No groups to review.', noConflicts: 'No pending conflicts.', noQuality: 'No quarantined records.', noAudit: 'No recorded actions.',
     members: (n: number) => `${n} records`,
     keepThis: 'Keep this one', merged: 'Merged', undo: 'Undo merge',
     mergeBtn: 'Merge duplicates into the main record', splitBtn: 'Not the same person',
@@ -72,11 +76,13 @@ const STR = {
     overrideYes: 'Yes, merge anyway', cancel: 'Cancel',
     markReviewed: 'Mark reviewed', reasonPrompt: 'Reason (optional):',
     conflictCedula: 'Same national ID, different names', conflictPhoto: 'Same photo, different names',
+    acceptQuality: 'Accept and publish', rejectQuality: 'Reject as spam',
+    qualityFlags: 'Signals',
     merge: 'merge', unmerge: 'unmerge', done: 'Done.',
   },
 } as const;
 
-type Tab = 'clusters' | 'conflicts' | 'audit';
+type Tab = 'clusters' | 'conflicts' | 'quality' | 'audit';
 
 export function MissingDedupDesk() {
   const locale = useLocale();
@@ -85,6 +91,7 @@ export function MissingDedupDesk() {
   const [q, setQ] = useState('');
   const [rows, setRows] = useState<Row[]>([]);
   const [conflicts, setConflicts] = useState<Row[]>([]);
+  const [quality, setQuality] = useState<Row[]>([]);
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -102,6 +109,9 @@ export function MissingDedupDesk() {
     } else if (tab === 'conflicts') {
       const { data } = await sb.rpc('coord_missing_conflicts', { p_limit: 200 });
       setConflicts((data as Row[]) ?? []);
+    } else if (tab === 'quality') {
+      const { data } = await sb.rpc('coord_missing_quality_queue', { p_limit: 200 });
+      setQuality((data as Row[]) ?? []);
     } else {
       const { data } = await sb.rpc('coord_merge_audit', { p_limit: 60 });
       setAudit((data as AuditRow[]) ?? []);
@@ -175,6 +185,19 @@ export function MissingDedupDesk() {
     await load();
   }
 
+  async function doSetQuality(id: string, qualityStatus: 'accepted' | 'rejected_spam') {
+    setBusy(id);
+    const { data, error } = await rpc('coord_set_missing_quality', {
+      p_id: id,
+      p_quality_status: qualityStatus,
+      p_reason_text: qualityStatus === 'accepted' ? 'coordinator accepted intake quality' : 'coordinator rejected spam',
+    });
+    setBusy(null);
+    const r = data as { ok?: boolean; error?: string } | null;
+    if (error || !r?.ok) { setMsg(error?.message ?? r?.error ?? 'error'); return; }
+    await load();
+  }
+
   const memberLine = (r: Row) => (
     <div className={`text-sm ${r.duplicate_of ? 'opacity-50' : ''}`}>
       <div className="font-medium">
@@ -195,7 +218,7 @@ export function MissingDedupDesk() {
     <div className="mt-5">
       {/* tabs */}
       <div className="flex gap-1 border-b border-black/10 text-sm dark:border-white/10">
-        {(['clusters', 'conflicts', 'audit'] as Tab[]).map((t) => (
+        {(['clusters', 'conflicts', 'quality', 'audit'] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`-mb-px border-b-2 px-3 py-2 font-medium ${tab === t ? 'border-red-600 text-red-600' : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>
             {s.tabs[t]}
@@ -272,6 +295,35 @@ export function MissingDedupDesk() {
                 </div>
                 {memberLine(c)}
                 <button disabled={busy === c.id} onClick={() => doClearFlags(c.id)} className="mt-2 text-xs font-medium text-zinc-600 hover:underline disabled:opacity-50 dark:text-zinc-400">{s.markReviewed}</button>
+              </li>
+            ))}
+          </ul>
+        )
+      )}
+
+      {/* QUALITY */}
+      {tab === 'quality' && !loading && (
+        quality.length === 0 ? <p className="mt-4 text-sm text-zinc-500">{s.noQuality}</p> : (
+          <ul className="mt-4 space-y-3">
+            {quality.map((qrow) => (
+              <li key={qrow.id} className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+                <div className="mb-2 flex flex-wrap gap-1 text-xs">
+                  <span className="font-medium text-amber-900 dark:text-amber-200">{s.qualityFlags}:</span>
+                  {(qrow.quality_flags ?? []).map((flag) => (
+                    <span key={flag} className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900 dark:bg-amber-900/50 dark:text-amber-100">{flag}</span>
+                  ))}
+                </div>
+                {memberLine(qrow)}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button disabled={busy === qrow.id} onClick={() => doSetQuality(qrow.id, 'accepted')}
+                    className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+                    {s.acceptQuality}
+                  </button>
+                  <button disabled={busy === qrow.id} onClick={() => doSetQuality(qrow.id, 'rejected_spam')}
+                    className="rounded-md border border-black/15 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-black/5 disabled:opacity-50 dark:border-white/15 dark:text-zinc-300 dark:hover:bg-white/10">
+                    {s.rejectQuality}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

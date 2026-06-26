@@ -24,7 +24,7 @@ const S = {
       'Abrimos nuestro motor de deduplicación de personas desaparecidas como una API y un servidor MCP, para que otras plataformas y agentes puedan preguntar “¿esta persona ya está reportada?” y federar registros mientras los reciben — sin duplicar la búsqueda.',
     privacyTitle: 'Privacidad primero',
     privacy:
-      'La cédula y las huellas de foto se usan SOLO para encontrar coincidencias y nunca se devuelven. Las respuestas solo traen los datos públicos que ya muestran los registros de origen, con un enlace de vuelta a cada fuente. La API nunca fusiona registros de forma destructiva.',
+      'La cédula y las huellas de foto se usan SOLO para encontrar coincidencias y nunca se devuelven. Las respuestas solo traen datos públicos aceptados, con enlace de vuelta a cada fuente. Entradas sospechosas quedan en revisión y la API nunca fusiona registros de forma destructiva.',
     endpointsTitle: 'Endpoints',
     authTitle: 'Autenticación y límites',
     auth:
@@ -53,7 +53,7 @@ const S = {
       'We open our missing-person deduplication engine as an API and an MCP server, so other platforms and agents can ask “is this person already reported?” and federate records as they receive them — without fragmenting the search.',
     privacyTitle: 'Privacy first',
     privacy:
-      'Cédula (national ID) and photo fingerprints are used ONLY to find matches and are never returned. Responses carry only the public metadata the source registries already show, with a link back to each source. The API never destructively merges records.',
+      'Cédula (national ID) and photo fingerprints are used ONLY to find matches and are never returned. Responses carry only accepted public metadata, with a link back to each source. Suspicious entries are held for review and the API never destructively merges records.',
     endpointsTitle: 'Endpoints',
     authTitle: 'Authentication & limits',
     auth:

@@ -8,12 +8,12 @@ const STR = {
   es: {
     heading: 'Personas: deduplicación',
     myProfile: 'Mi perfil',
-    desc: 'Revisa los grupos de “posible misma persona”. Fusionar oculta los duplicados detrás de un registro principal (reversible y auditado); separar deshace una agrupación equivocada. Nunca se borra un registro.',
+    desc: 'Revisa calidad de ingesta, grupos de “posible misma persona” y conflictos. Los registros sospechosos no aparecen públicamente hasta que se aceptan; fusionar duplicados es reversible y auditado.',
   },
   en: {
     heading: 'People: deduplication',
     myProfile: 'My profile',
-    desc: 'Review “possibly the same person” groups. Merge hides duplicates behind one main record (reversible and audited); split undoes a wrong grouping. No record is ever deleted.',
+    desc: 'Review intake quality, “possibly the same person” groups, and conflicts. Suspicious records stay off the public site until accepted; duplicate merges are reversible and audited.',
   },
 } as const;
 

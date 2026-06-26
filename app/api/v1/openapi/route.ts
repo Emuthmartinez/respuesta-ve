@@ -52,7 +52,8 @@ const SPEC = {
       'Match and deduplicate missing-person records against a federated index for the 2026 Venezuela earthquake response. ' +
       'PII policy: cédula and photo hashes are used only to FIND matches and are never returned; responses carry only the ' +
       'public metadata the source registries already show, plus a link back to each source. Grouping is advisory — the API ' +
-      'never destructively merges records.',
+      'never destructively merges records. Intake quality is also gated: suspicious or unusable records are stored for ' +
+      'coordinator review and excluded from public search until accepted.',
     contact: { name: 'Respuesta VE', url: 'https://respuestave.org' },
     license: { name: 'Humanitarian use', url: 'https://respuestave.org' },
   },
@@ -104,7 +105,7 @@ const SPEC = {
     '/persons': {
       post: {
         summary: 'Dedupe-on-ingest: federate a record into the shared index.',
-        description: 'Finds likely matches, then stores via the controlled federation path (link-back required; consent/photo forced off). Idempotent per (source, externalId). Never auto-merges.',
+        description: 'Finds likely matches, then stores via the controlled federation path (link-back required; consent/photo forced off). Idempotent per (source, externalId). Never auto-merges. Low-quality records return qualityStatus="needs_review" and stay out of public search until a coordinator accepts them.',
         security: [{ ApiKeyAuth: [] }],
         requestBody: { required: true, content: { 'application/json': { schema: {
           type: 'object', required: ['record', 'externalId', 'externalUrl'], properties: {
@@ -114,7 +115,7 @@ const SPEC = {
             source: { type: 'string', description: 'IGNORED — source attribution is determined by your API key (set by a coordinator), so partners cannot impersonate a registry. Records are namespaced per key.', deprecated: true },
           },
         } } } },
-        responses: { '201': { description: 'Inserted.' }, '200': { description: 'Updated (existing externalId).' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
+        responses: { '201': { description: 'Inserted and public-search eligible.' }, '202': { description: 'Stored but held for quality review; response includes qualityStatus and qualityFlags.' }, '200': { description: 'Updated (existing externalId).' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
       },
       get: {
         summary: 'Search the federated index (name + optional estado).',
