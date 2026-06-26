@@ -9,9 +9,11 @@ const STR = {
   en: { close_menu: 'Close menu',  open_menu: 'Open menu'  },
 } as const;
 
-interface NavItem {
+export interface NavItem {
   href: string;
   label: string;
+  /** 'in' = visitors in Venezuela only, 'out' = abroad only, undefined = both. */
+  ctx?: 'in' | 'out';
 }
 
 export function MobileNav({ nav }: { nav: NavItem[] }) {
@@ -98,6 +100,7 @@ export function MobileNav({ nav }: { nav: NavItem[] }) {
               <Link
                 key={n.href}
                 href={n.href}
+                data-ctx={n.ctx}
                 role="menuitem"
                 onClick={() => setOpen(false)}
                 className="px-4 py-2.5 text-zinc-700 transition-colors hover:bg-black/5 hover:text-black dark:text-zinc-200 dark:hover:bg-white/10 dark:hover:text-white"

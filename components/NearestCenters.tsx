@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { haversineKm, COUNTRY_NAME } from '@/lib/geo';
 import { donationItemLabel } from '@/lib/orgs';
+import { Linkify, ContactValue } from '@/lib/linkify';
 import { useLocale } from '@/lib/locale-context';
 import type { CenterPublic } from '@/lib/orgs';
 
@@ -177,8 +178,16 @@ export default function NearestCenters({ centers }: { centers: CenterPublic[] })
                     </div>
                   </div>
                 )}
-                {c.needs_notes && <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{c.needs_notes}</p>}
-                {c.contact_public_display && <p className="mt-1 text-xs text-zinc-500">{s.contact_prefix} {c.contact_public_display}</p>}
+                {c.needs_notes && (
+                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                    <Linkify>{c.needs_notes}</Linkify>
+                  </p>
+                )}
+                {c.contact_public_display && (
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {s.contact_prefix} <ContactValue value={c.contact_public_display} />
+                  </p>
+                )}
                 {c.hours_notes && <p className="text-xs text-zinc-500">{c.hours_notes}</p>}
                 {c.accepts_monetary && c.monetary_url && (
                   <div className="mt-3">

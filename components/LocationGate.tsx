@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Locale } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
-
-const KEY = 'respuesta_ve_context';
+import { CONTEXT_KEY, setSide } from '@/lib/site-context';
 
 // First-visit gate: "¿Estás dentro o fuera de Venezuela?" — purely client-side
 // (localStorage), never sent to the server. Protects diaspora users who may
-// have fled persecution. Choosing "fuera" routes to the donation hub.
+// have fled persecution. Choosing "fuera" routes to the donation hub. The
+// choice also drives the audience-specific nav (see lib/site-context).
 export function LocationGate({ locale }: { locale: Locale }) {
   const [show, setShow] = useState(false);
   const router = useRouter();
@@ -17,18 +17,14 @@ export function LocationGate({ locale }: { locale: Locale }) {
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem(KEY)) setShow(true);
+      if (!localStorage.getItem(CONTEXT_KEY)) setShow(true);
     } catch {
       /* ignore */
     }
   }, []);
 
   function choose(side: 'dentro' | 'fuera') {
-    try {
-      localStorage.setItem(KEY, JSON.stringify({ side, set_at: Date.now() }));
-    } catch {
-      /* ignore */
-    }
+    setSide(side);
     setShow(false);
     if (side === 'fuera') router.push('/afuera');
   }

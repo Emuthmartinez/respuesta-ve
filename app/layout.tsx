@@ -6,6 +6,7 @@ import { Disclaimer } from '@/components/Disclaimer';
 import { t } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n-server';
 import { LocaleProvider } from '@/lib/locale-context';
+import { CONTEXT_SCRIPT } from '@/lib/site-context';
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://respuesta-ve.e-muth-martinez.workers.dev';
 const DESC =
@@ -87,8 +88,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={locale} className={htmlClass}>
       <head>
-        {/* Must be first in <head> so it runs before any CSS paint */}
+        {/* Must be first in <head> so they run before any CSS paint */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: CONTEXT_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-100">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />

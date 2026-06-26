@@ -17,6 +17,20 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
+/* Audience context. [data-context] is set on <html> pre-paint from localStorage
+   (see CONTEXT_SCRIPT). Items tagged data-ctx="in" show only for visitors in
+   Venezuela; data-ctx="out" only for visitors abroad. Untagged items show for
+   both. Default (attribute missing) behaves as "dentro". */
+[data-ctx="out"] {
+  display: none;
+}
+html[data-context="fuera"] [data-ctx="in"] {
+  display: none;
+}
+html[data-context="fuera"] [data-ctx="out"] {
+  display: revert;
+}
+
 /* MapLibre popup: keep text readable regardless of theme */
 .maplibregl-popup-content {
   color: #111;

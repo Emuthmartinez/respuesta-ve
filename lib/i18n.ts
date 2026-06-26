@@ -119,13 +119,18 @@ const dict = {
       org_cta_campaign: 'Ver campaña →',
     },
     recursos: {
-      heading: 'Recursos',
-      subtext: 'Líneas de emergencia y sitios de confianza para encontrar ayuda.',
+      heading: 'Ayuda en Venezuela',
+      subtext: 'Líneas de emergencia, centros de ayuda y recursos de confianza cerca de ti.',
       emergency_heading: 'Emergencias',
+      family_heading: 'Buscar a tu familia',
+      family_link: 'Buscar personas desaparecidas →',
+      family_sub: 'Busca en los registros reunidos de personas desaparecidas tras el terremoto.',
+      centers_heading: 'Centros de acopio y ayuda en Venezuela',
+      centers_note:
+        'Puntos verificados que reciben y distribuyen suministros. Las ubicaciones se muestran de forma aproximada.',
       first_aid_heading: 'Primeros auxilios',
       first_aid_link: 'Guía de primeros auxilios →',
       first_aid_sub: 'Pasos básicos basados en Cruz Roja, OMS y FEMA.',
-      find_people: 'Buscar personas desaparecidas',
       mental_health: 'Salud mental',
       mental_health_note:
         'Estas son líneas de apoyo comunitario; no reemplazan la atención clínica de emergencia.',
@@ -297,13 +302,18 @@ const dict = {
       org_cta_campaign: 'View campaign →',
     },
     recursos: {
-      heading: 'Resources',
-      subtext: 'Emergency lines and trusted sites to find help.',
+      heading: 'Help in Venezuela',
+      subtext: 'Emergency lines, help centers and trusted resources near you.',
       emergency_heading: 'Emergencies',
+      family_heading: 'Find your family',
+      family_link: 'Search missing people →',
+      family_sub: 'Search the gathered registries of people missing after the earthquake.',
+      centers_heading: 'Collection & help centers in Venezuela',
+      centers_note:
+        'Verified points that receive and distribute supplies. Locations are shown approximately.',
       first_aid_heading: 'First aid',
       first_aid_link: 'First-aid guide →',
       first_aid_sub: 'Basic steps based on Red Cross, WHO and FEMA.',
-      find_people: 'Find missing people',
       mental_health: 'Mental health',
       mental_health_note:
         'These are community support lines; they do not replace emergency clinical care.',

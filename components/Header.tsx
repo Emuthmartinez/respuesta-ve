@@ -3,21 +3,24 @@ import { t } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n-server';
 import { LangToggle } from '@/components/LangToggle';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { MobileNav } from '@/components/MobileNav';
+import { MobileNav, type NavItem } from '@/components/MobileNav';
+import { ContextSwitch } from '@/components/ContextSwitch';
 
 export async function Header() {
   const locale = await getLocale();
   const d = t(locale);
 
-  const NAV = [
-    { href: '/', label: d.nav.map },
-    { href: '/reportar', label: d.nav.report },
-    { href: '/afuera', label: d.nav.donate },
-    { href: '/intercambio', label: d.nav.exchange },
-    { href: '/recursos', label: d.nav.resources },
+  // ctx 'in' = shown only to visitors in Venezuela, 'out' = only abroad,
+  // undefined = both. Array order is display order; hidden items collapse.
+  const NAV: NavItem[] = [
+    { href: '/', label: d.nav.map, ctx: 'in' },
+    { href: '/reportar', label: d.nav.report, ctx: 'in' },
+    { href: '/recursos', label: d.nav.resources, ctx: 'in' },
+    { href: '/intercambio', label: d.nav.exchange, ctx: 'in' },
+    { href: '/afuera', label: d.nav.donate, ctx: 'out' },
     { href: '/personas', label: d.nav.people },
-    { href: '/desmentidos', label: d.nav.debunks },
     { href: '/voluntarios', label: d.nav.volunteers },
+    { href: '/desmentidos', label: d.nav.debunks },
   ];
 
   return (
@@ -38,17 +41,21 @@ export async function Header() {
             <Link
               key={n.href}
               href={n.href}
+              data-ctx={n.ctx}
               className="rounded-md px-2 py-1 text-zinc-600 hover:bg-black/5 hover:text-black dark:text-zinc-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               {n.label}
             </Link>
           ))}
+          <span className="mx-1 h-5 w-px bg-black/10 dark:bg-white/15" />
+          <ContextSwitch />
           <LangToggle locale={locale} />
           <ThemeToggle />
         </nav>
 
         {/* Mobile right side: toggles + hamburger */}
         <div className="flex items-center gap-1 lg:hidden">
+          <ContextSwitch />
           <LangToggle locale={locale} />
           <ThemeToggle />
           <MobileNav nav={NAV} />
