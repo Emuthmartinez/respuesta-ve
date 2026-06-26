@@ -36,7 +36,10 @@ interface ExistingRow {
   age_estimate: number | null;
   estado: string | null;
   municipio: string | null;
+  external_url: string | null;
 }
+
+type PoolRow = MatchableRecord & { id: string; externalUrl: string | null };
 
 const toMatchable = (p: PfifPerson): MatchableRecord => ({
   displayName: pfifDisplayName(p),
@@ -87,31 +90,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'db_unconfigured' }, { status: 503 });
   }
 
-  // 3. Pull existing federated records as dedup candidates.
+  // 3. Pull existing federated records as the seed dedup pool. We carry
+  // external_url so we can exclude a record's OWN prior row on re-ingest.
   const { data: existing } = await sb
     .from('missing_person_pins_public')
-    .select('id, display_name, age_estimate, estado, municipio')
+    .select('id, display_name, age_estimate, estado, municipio, external_url')
     .limit(2000);
-  const candidates: (MatchableRecord & { id: string })[] = ((existing as ExistingRow[]) ?? []).map((r) => ({
+  const pool: PoolRow[] = ((existing as ExistingRow[]) ?? []).map((r) => ({
     id: r.id,
     displayName: r.display_name,
     age: r.age_estimate,
     estado: r.estado,
     municipio: r.municipio,
+    externalUrl: r.external_url,
   }));
 
-  // 4. Per record: compute possible duplicates (surface only) + write/dry-run.
+  // 4. Per record: compute possible duplicates against the pool (existing rows
+  // + earlier batch members), upsert, then add this row to the pool so later
+  // members can match it. Edges are one-directional but the UI clusters them
+  // with union-find, so a later "B → A" edge still groups {A,B}.
   const results: { personRecordId: string; action: string; possibleDuplicates: number; error?: string }[] = [];
   let inserted = 0;
   let updated = 0;
   let failed = 0;
 
   for (const p of usable) {
-    const dups = findPossibleDuplicates(toMatchable(p), candidates);
+    // Exclude this record's own prior row (same source URL) so a re-ingest
+    // never flags itself as a duplicate.
+    const cands = pool.filter((c) => c.externalUrl !== p.sourceUrl);
+    const dups = findPossibleDuplicates(toMatchable(p), cands);
     const dupIds = dups.map((d) => d.id);
     const topScore = dups[0]?.score ?? null;
 
     if (dryRun) {
+      // No DB write, so use a synthetic id to let later members still match.
+      pool.push({ id: `batch:${p.personRecordId}`, externalUrl: p.sourceUrl, ...toMatchable(p) });
       results.push({ personRecordId: p.personRecordId, action: 'dry_run', possibleDuplicates: dups.length });
       continue;
     }
@@ -136,13 +149,15 @@ export async function POST(req: NextRequest) {
       p_dedupe_score: topScore,
     });
 
-    const r = data as { ok?: boolean; action?: string; error?: string } | null;
+    const r = data as { ok?: boolean; id?: string; action?: string; error?: string } | null;
     if (error || !r?.ok) {
       failed++;
       results.push({ personRecordId: p.personRecordId, action: 'error', possibleDuplicates: dups.length, error: error?.message ?? r?.error ?? 'unknown' });
     } else {
       if (r.action === 'updated') updated++;
       else inserted++;
+      // Add the freshly-written row to the pool so later batch members match it.
+      if (r.id) pool.push({ id: r.id, externalUrl: p.sourceUrl, ...toMatchable(p) });
       results.push({ personRecordId: p.personRecordId, action: r.action ?? 'inserted', possibleDuplicates: dups.length });
     }
   }

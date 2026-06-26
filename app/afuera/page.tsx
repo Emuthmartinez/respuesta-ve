@@ -6,12 +6,9 @@ import type { OrgPublic, CenterPublic } from '@/lib/orgs';
 import { safetyCopy as getSafetyCopy } from '@/lib/safety-copy';
 import NearestCenters from '@/components/NearestCenters';
 import { t } from '@/lib/i18n';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 
-export const metadata: Metadata = {
-  title: 'Ayuda desde el exterior — Respuesta VE',
-  description: 'Organizaciones verificadas, centros de acopio y plataformas para buscar personas tras el terremoto en Venezuela.',
-};
+export const generateMetadata = (): Promise<Metadata> => metaFor('afuera');
 
 const PEOPLE_CATEGORIES = new Set(['find_people', 'news_info']);
 const isDonorOrg = (o: OrgPublic) => !PEOPLE_CATEGORIES.has(o.category);

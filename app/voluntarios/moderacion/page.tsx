@@ -3,9 +3,9 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getResponderProfile, isActiveVerified } from '@/lib/auth';
 import { ModerationList } from '@/components/voluntarios/ModerationList';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 
-export const metadata: Metadata = { title: 'Moderación — Respuesta VE' };
+export const generateMetadata = (): Promise<Metadata> => metaFor('voluntarios_moderacion');
 
 const STR = {
   es: {

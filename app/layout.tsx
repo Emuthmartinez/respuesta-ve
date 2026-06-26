@@ -11,33 +11,39 @@ const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://respuesta-ve.e-muth-ma
 const DESC =
   'Plataforma comunitaria de coordinación tras el terremoto en Venezuela: mapa de edificios dañados, inspección estructural, donaciones verificadas, ayuda mutua y búsqueda de personas.';
 
-export const metadata: Metadata = {
-  metadataBase: new URL(BASE),
-  applicationName: 'Respuesta VE',
-  title: 'Respuesta VE — Mapa de daños · Terremoto Venezuela 2026',
-  description: DESC,
-  keywords: [
-    'terremoto Venezuela 2026', 'sismo Venezuela', 'mapa de daños', 'donar Venezuela',
-    'centros de acopio Venezuela', 'personas desaparecidas Venezuela', 'La Guaira', 'Caracas',
-    'ayuda humanitaria Venezuela', 'inspección estructural', 'Venezuela earthquake',
-  ],
-  alternates: { canonical: '/' },
-  openGraph: {
-    type: 'website',
-    siteName: 'Respuesta VE',
-    locale: 'es_VE',
-    url: BASE,
-    title: 'Respuesta VE — Terremoto Venezuela 2026',
-    description: DESC,
-    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'Respuesta VE — Terremoto Venezuela 2026' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Respuesta VE — Terremoto Venezuela 2026',
-    description: DESC,
-    images: ['/og.png'],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const m = t(locale).meta.default;
+  const ogLocale = locale === 'en' ? 'en_US' : 'es_VE';
+  const ogTitle = locale === 'en' ? 'Respuesta VE — Venezuela Earthquake 2026' : 'Respuesta VE — Terremoto Venezuela 2026';
+  return {
+    metadataBase: new URL(BASE),
+    applicationName: 'Respuesta VE',
+    title: m.title,
+    description: m.description,
+    keywords: [
+      'terremoto Venezuela 2026', 'sismo Venezuela', 'mapa de daños', 'donar Venezuela',
+      'centros de acopio Venezuela', 'personas desaparecidas Venezuela', 'La Guaira', 'Caracas',
+      'ayuda humanitaria Venezuela', 'inspección estructural', 'Venezuela earthquake',
+    ],
+    alternates: { canonical: '/' },
+    openGraph: {
+      type: 'website',
+      siteName: 'Respuesta VE',
+      locale: ogLocale,
+      url: BASE,
+      title: ogTitle,
+      description: m.description,
+      images: [{ url: '/og.png', width: 1200, height: 630, alt: ogTitle }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: ogTitle,
+      description: m.description,
+      images: ['/og.png'],
+    },
+  };
+}
 
 const JSON_LD = {
   '@context': 'https://schema.org',

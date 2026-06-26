@@ -3,9 +3,9 @@ import type { Metadata } from 'next';
 import { getResponderProfile, isActiveVerified } from '@/lib/auth';
 import { AssessmentForm } from '@/components/voluntarios/AssessmentForm';
 import { Disclaimer } from '@/components/Disclaimer';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 
-export const metadata: Metadata = { title: 'Evaluación ATC-20 — Respuesta VE' };
+export const generateMetadata = (): Promise<Metadata> => metaFor('voluntarios_evaluar');
 
 const STR = {
   es: {

@@ -36,6 +36,35 @@ const dict = {
       debunks: 'Desmentidos',
       volunteers: 'Voluntarios',
     },
+    meta: {
+      default: {
+        title: 'Respuesta VE — Mapa de daños · Terremoto Venezuela 2026',
+        description:
+          'Plataforma comunitaria de coordinación tras el terremoto en Venezuela: mapa de edificios dañados, inspección estructural, donaciones verificadas, ayuda mutua y búsqueda de personas.',
+      },
+      afuera: {
+        title: 'Ayuda desde el exterior — Respuesta VE',
+        description: 'Organizaciones verificadas, centros de acopio y plataformas para buscar personas tras el terremoto en Venezuela.',
+      },
+      recursos: { title: 'Recursos — Respuesta VE' },
+      intercambio: { title: 'Intercambio de ayuda — Respuesta VE' },
+      personas: { title: 'Personas — Respuesta VE' },
+      desmentidos: {
+        title: 'Información Falsa — Respuesta VE',
+        description: 'Listado de noticias, videos e imágenes relacionados con el terremoto en Venezuela que han sido verificados como falsos o engañosos.',
+      },
+      primeros_auxilios: {
+        title: 'Primeros auxilios — Respuesta VE',
+        description: 'Guía básica de primeros auxilios tras un terremoto, basada en la Cruz Roja, la OMS y FEMA. Información educativa; ante una emergencia llama al 171.',
+      },
+      voluntarios: { title: 'Voluntarios — Respuesta VE' },
+      voluntarios_cola: { title: 'Cola de inspección — Respuesta VE' },
+      voluntarios_centros: { title: 'Aprobación de donaciones — Respuesta VE' },
+      voluntarios_evaluar: { title: 'Evaluación ATC-20 — Respuesta VE' },
+      voluntarios_intercambio: { title: 'Mesa de habilidades — Respuesta VE' },
+      voluntarios_moderacion: { title: 'Moderación — Respuesta VE' },
+      voluntarios_responders: { title: 'Verificación de responders — Respuesta VE' },
+    },
     gate: {
       brand_label: 'Respuesta VE · Terremoto 2026',
       heading: '¿Dónde estás?',
@@ -185,6 +214,35 @@ const dict = {
       people: 'People',
       debunks: 'Debunks',
       volunteers: 'Volunteers',
+    },
+    meta: {
+      default: {
+        title: 'Respuesta VE — Damage map · Venezuela Earthquake 2026',
+        description:
+          'Community coordination platform after the earthquake in Venezuela: damaged-building map, structural inspection, verified donations, mutual aid, and finding missing people.',
+      },
+      afuera: {
+        title: 'Help from abroad — Respuesta VE',
+        description: 'Verified organizations, collection centers, and platforms to find missing people after the earthquake in Venezuela.',
+      },
+      recursos: { title: 'Resources — Respuesta VE' },
+      intercambio: { title: 'Help exchange — Respuesta VE' },
+      personas: { title: 'Missing people — Respuesta VE' },
+      desmentidos: {
+        title: 'Misinformation — Respuesta VE',
+        description: 'A list of news, videos, and images related to the earthquake in Venezuela that have been verified as false or misleading.',
+      },
+      primeros_auxilios: {
+        title: 'First aid — Respuesta VE',
+        description: 'Basic first-aid guide after an earthquake, based on the Red Cross, WHO, and FEMA. Educational information; in an emergency call 171.',
+      },
+      voluntarios: { title: 'Volunteers — Respuesta VE' },
+      voluntarios_cola: { title: 'Inspection queue — Respuesta VE' },
+      voluntarios_centros: { title: 'Donation approvals — Respuesta VE' },
+      voluntarios_evaluar: { title: 'ATC-20 assessment — Respuesta VE' },
+      voluntarios_intercambio: { title: 'Skills desk — Respuesta VE' },
+      voluntarios_moderacion: { title: 'Moderation — Respuesta VE' },
+      voluntarios_responders: { title: 'Responder verification — Respuesta VE' },
     },
     gate: {
       brand_label: 'Respuesta VE · Earthquake 2026',

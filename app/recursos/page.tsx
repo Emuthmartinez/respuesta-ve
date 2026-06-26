@@ -4,9 +4,9 @@ import { getSupabaseServer } from '@/lib/supabase/server';
 import type { OrgPublic } from '@/lib/orgs';
 import { EMERGENCY_NUMBERS } from '@/lib/safety-copy';
 import { t, tr } from '@/lib/i18n';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 
-export const metadata: Metadata = { title: 'Recursos — Respuesta VE' };
+export const generateMetadata = (): Promise<Metadata> => metaFor('recursos');
 
 const RESOURCE_CATEGORIES = ['find_people', 'mental_health', 'news_info', 'medical', 'rescue'];
 

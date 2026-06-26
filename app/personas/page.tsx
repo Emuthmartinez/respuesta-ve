@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { MissingPersonSearch } from '@/components/MissingPersonSearch';
 import type { MissingPinPublic } from '@/lib/types';
 
-export const metadata: Metadata = { title: 'Personas — Respuesta VE' };
+export const generateMetadata = (): Promise<Metadata> => metaFor('personas');
 
 const STR = {
   es: {

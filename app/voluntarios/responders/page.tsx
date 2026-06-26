@@ -3,9 +3,9 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getResponderProfile, isActiveVerified } from '@/lib/auth';
 import { ResponderVerifyList } from '@/components/voluntarios/ResponderVerifyList';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 
-export const metadata: Metadata = { title: 'Verificación de responders — Respuesta VE' };
+export const generateMetadata = (): Promise<Metadata> => metaFor('voluntarios_responders');
 
 const STR = {
   es: {

@@ -4,9 +4,9 @@ import { getSupabaseServer } from '@/lib/supabase/server';
 import { skillLabel } from '@/lib/skills';
 import { URGENCY_COLOR, urgencyLabel } from '@/lib/responder';
 import { safetyCopy as getSafetyCopy } from '@/lib/safety-copy';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 
-export const metadata: Metadata = { title: 'Intercambio de ayuda — Respuesta VE' };
+export const generateMetadata = (): Promise<Metadata> => metaFor('intercambio');
 
 const STR = {
   es: {

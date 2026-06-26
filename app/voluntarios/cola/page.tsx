@@ -4,9 +4,9 @@ import type { Metadata } from 'next';
 import { getResponderProfile, isActiveVerified } from '@/lib/auth';
 import { InspectionQueue } from '@/components/voluntarios/InspectionQueue';
 import { Disclaimer } from '@/components/Disclaimer';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 
-export const metadata: Metadata = { title: 'Cola de inspección — Respuesta VE' };
+export const generateMetadata = (): Promise<Metadata> => metaFor('voluntarios_cola');
 
 const STR = {
   es: {

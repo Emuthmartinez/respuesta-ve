@@ -4,9 +4,9 @@ import type { Metadata } from 'next';
 import { getResponderProfile, isActiveVerified } from '@/lib/auth';
 import { DonationCenterQueue } from '@/components/voluntarios/DonationCenterQueue';
 import { OrganizationQueue } from '@/components/voluntarios/OrganizationQueue';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 
-export const metadata: Metadata = { title: 'Aprobación de donaciones — Respuesta VE' };
+export const generateMetadata = (): Promise<Metadata> => metaFor('voluntarios_centros');
 
 const STR = {
   es: {

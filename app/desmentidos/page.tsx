@@ -1,14 +1,10 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getSupabaseServer } from '@/lib/supabase/server';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 import type { Locale } from '@/lib/i18n';
 
-export const metadata: Metadata = {
-  title: 'Información Falsa — Respuesta VE',
-  description:
-    'Listado de noticias, videos e imágenes relacionados con el terremoto en Venezuela que han sido verificados como falsos o engañosos.',
-};
+export const generateMetadata = (): Promise<Metadata> => metaFor('desmentidos');
 
 // Shape returned by the misinformation_reports_public view (0013 migration).
 interface MisinfoRow {

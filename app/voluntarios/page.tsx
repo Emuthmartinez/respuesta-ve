@@ -4,9 +4,9 @@ import { getResponderProfile, isActiveVerified } from '@/lib/auth';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 import { credentialLabel, verificationLabel, tierLabel } from '@/lib/responder';
 import { SignOutButton } from '@/components/voluntarios/SignOutButton';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 
-export const metadata: Metadata = { title: 'Voluntarios — Respuesta VE' };
+export const generateMetadata = (): Promise<Metadata> => metaFor('voluntarios');
 
 const STR = {
   es: {

@@ -1,13 +1,9 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { t } from '@/lib/i18n';
-import { getLocale } from '@/lib/i18n-server';
+import { getLocale, metaFor } from '@/lib/i18n-server';
 
-export const metadata: Metadata = {
-  title: 'Primeros auxilios — Respuesta VE',
-  description:
-    'Guía básica de primeros auxilios tras un terremoto, basada en la Cruz Roja, la OMS y FEMA. Información educativa; ante una emergencia llama al 171.',
-};
+export const generateMetadata = (): Promise<Metadata> => metaFor('primeros_auxilios');
 
 const CARDS_ES: { t: string; steps: string[] }[] = [
   {
