@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2025-03-25",
   "triggers": {
-    "crons": ["0 */3 * * *"]
+    "crons": ["0 * * * *"]
   },
   "kv_namespaces": [
     { "binding": "DEDUP", "id": "a17a7f84aecd4aab88800a40e062e605" }

@@ -342,8 +342,14 @@ export default {
       }
     }
     if (url.pathname === '/debug') {
-      const items = await fetchNews();
-      return Response.json({ news_items: items.length, sample: items.slice(0, 4).map((i) => i.title) });
+      const [news, social] = await Promise.all([fetchNews(), fetchXpoz(env)]);
+      return Response.json({
+        news_items: news.length,
+        social_items: social.length,
+        xpoz_key_set: Boolean(env.XPOZ_ACCESS_KEY),
+        sample_news: news.slice(0, 3).map((i) => i.title),
+        sample_social: social.slice(0, 3).map((i) => i.title.slice(0, 80)),
+      });
     }
     return new Response('respuesta-ve-ingest OK', { status: 200 });
   },
