@@ -37,8 +37,20 @@ const PERSON = {
   cedula: z.string().optional().describe('Venezuelan national ID — match-only, never returned.'),
   photoPhash: z.string().regex(/^[0-9a-fA-F]{16}$/).optional().describe('16-hex dHash of the photo.'),
   status: z.enum(['missing', 'found_safe', 'found_injured', 'deceased', 'unknown']).optional(),
+  lastSeenAt: z.string().optional().describe('When the person was last seen.'),
+  sourceUpdatedAt: z.string().optional().describe('Timestamp of this status/update in your source system.'),
 };
-const pickPerson = (a) => ({ name: a.name, age: a.age, estado: a.estado, municipio: a.municipio, cedula: a.cedula, photoPhash: a.photoPhash, status: a.status });
+const pickPerson = (a) => ({
+  name: a.name,
+  age: a.age,
+  estado: a.estado,
+  municipio: a.municipio,
+  cedula: a.cedula,
+  photoPhash: a.photoPhash,
+  status: a.status,
+  lastSeenAt: a.lastSeenAt,
+  sourceUpdatedAt: a.sourceUpdatedAt,
+});
 
 const server = new McpServer({ name: 'respuesta-ve-dedup', version: '1.0.0' });
 
@@ -61,5 +73,15 @@ server.registerTool('submit_person', {
   description: 'Federate a missing-person record into the shared index (dedupe-on-ingest). Requires a link back to your source record. Idempotent per (source, externalId). Never auto-merges.',
   inputSchema: { ...PERSON, externalId: z.string().describe('Your stable record id.'), externalUrl: z.string().url().describe('Link back to your record (required).'), source: z.enum(['venezuelatebusca', 'desaparecidosterremotovenezuela', 'desaparecidosvenezuela', 'pfif_feed', 'other']).optional() },
 }, async (a) => result(await call('POST', '/persons', { body: { record: pickPerson(a), externalId: a.externalId, externalUrl: a.externalUrl, source: a.source ?? 'other' } })));
+
+server.registerTool('get_person_status', {
+  description: 'Get canonical status signals for a record you submitted earlier. Use when another site may have marked the same person found and your source needs to reconcile.',
+  inputSchema: { externalId: z.string().describe('Your stable record id used with submit_person.') },
+}, async (a) => result(await call('GET', '/persons/status', { query: { externalId: a.externalId } })));
+
+server.registerTool('list_person_changes', {
+  description: 'Poll accepted public missing-person records changed since a cursor. Use nextSince from the previous response as the next since value.',
+  inputSchema: { since: z.string().describe('ISO timestamp cursor.'), limit: z.number().int().min(1).max(500).optional() },
+}, async (a) => result(await call('GET', '/persons/changes', { query: { since: a.since, limit: a.limit ?? 100 } })));
 
 await server.connect(new StdioServerTransport());

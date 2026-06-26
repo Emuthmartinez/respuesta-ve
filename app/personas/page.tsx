@@ -8,7 +8,7 @@ import type { MissingPinPublic } from '@/lib/types';
 export const generateMetadata = (): Promise<Metadata> => metaFor('personas');
 
 const SELECT =
-  'id, display_name, lat, lng, estado, municipio, status, source, external_url, photo_url, age_estimate, possible_duplicate_ids, cluster_id, cedula_confirmed, cluster_size, is_multi_person, last_seen_at, created_at';
+  'id, display_name, lat, lng, estado, municipio, status, source, external_url, photo_url, age_estimate, possible_duplicate_ids, cluster_id, cedula_confirmed, cluster_size, is_multi_person, last_seen_at, source_updated_at, created_at, updated_at';
 
 const STR = {
   es: {

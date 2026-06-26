@@ -21,10 +21,10 @@ const S = {
   es: {
     heading: 'API para desarrolladores',
     intro:
-      'Abrimos nuestro motor de deduplicación de personas desaparecidas como una API y un servidor MCP, para que otras plataformas y agentes puedan preguntar “¿esta persona ya está reportada?” y federar registros mientras los reciben — sin duplicar la búsqueda.',
+      'Abrimos nuestro motor de deduplicación y sincronización de personas desaparecidas como una API y un servidor MCP, para que otras plataformas y agentes puedan preguntar “¿esta persona ya está reportada?”, federar registros y reconciliar estados cuando otra fuente localiza a alguien.',
     privacyTitle: 'Privacidad primero',
     privacy:
-      'La cédula y las huellas de foto se usan SOLO para encontrar coincidencias y nunca se devuelven. Las respuestas solo traen datos públicos aceptados, con enlace de vuelta a cada fuente. Entradas sospechosas quedan en revisión y la API nunca fusiona registros de forma destructiva.',
+      'La cédula y las huellas de foto se usan SOLO para encontrar coincidencias y nunca se devuelven. Las respuestas solo traen datos públicos aceptados, con enlace de vuelta a cada fuente. Entradas sospechosas quedan en revisión, los cambios de estado respetan la hora de actualización de la fuente y la API nunca fusiona registros de forma destructiva.',
     endpointsTitle: 'Endpoints',
     authTitle: 'Autenticación y límites',
     auth:
@@ -32,7 +32,7 @@ const S = {
     exampleTitle: 'Ejemplo',
     mcpTitle: 'MCP (para agentes de IA)',
     mcp:
-      'Un servidor MCP expone las mismas funciones como herramientas de agente: match_person, score_persons, search_persons y submit_person. Configúralo apuntando a la API con tu clave:',
+      'Un servidor MCP expone las mismas funciones como herramientas de agente: match_person, score_persons, search_persons, submit_person, get_person_status y list_person_changes. Configúralo apuntando a la API con tu clave:',
     accessTitle: 'Solicitar una clave',
     access:
       'Las claves las emite el equipo de coordinación. Escríbenos para integrar tu registro o tu agente:',
@@ -44,16 +44,18 @@ const S = {
       ['POST', '/score', 'Comparar un registro contra candidatos propios (sin guardar).'],
       ['POST', '/match', '¿Ya está esta persona en el índice federado?'],
       ['POST', '/persons', 'Deduplicar al ingresar y federar (requiere enlace a la fuente).'],
+      ['GET', '/persons/status', 'Ver estado canónico/señales para tu externalId.'],
+      ['GET', '/persons/changes', 'Sincronizar cambios aceptados desde un cursor.'],
       ['GET', '/persons', 'Buscar en el índice.'],
     ],
   },
   en: {
     heading: 'Developer API',
     intro:
-      'We open our missing-person deduplication engine as an API and an MCP server, so other platforms and agents can ask “is this person already reported?” and federate records as they receive them — without fragmenting the search.',
+      'We open our missing-person deduplication and status-sync engine as an API and an MCP server, so other platforms and agents can ask “is this person already reported?”, federate records, and reconcile status when another source finds someone.',
     privacyTitle: 'Privacy first',
     privacy:
-      'Cédula (national ID) and photo fingerprints are used ONLY to find matches and are never returned. Responses carry only accepted public metadata, with a link back to each source. Suspicious entries are held for review and the API never destructively merges records.',
+      'Cédula (national ID) and photo fingerprints are used ONLY to find matches and are never returned. Responses carry only accepted public metadata, with a link back to each source. Suspicious entries are held for review, status changes respect the source update timestamp, and the API never destructively merges records.',
     endpointsTitle: 'Endpoints',
     authTitle: 'Authentication & limits',
     auth:
@@ -61,7 +63,7 @@ const S = {
     exampleTitle: 'Example',
     mcpTitle: 'MCP (for AI agents)',
     mcp:
-      'An MCP server exposes the same capabilities as agent tools: match_person, score_persons, search_persons, and submit_person. Point it at the API with your key:',
+      'An MCP server exposes the same capabilities as agent tools: match_person, score_persons, search_persons, submit_person, get_person_status, and list_person_changes. Point it at the API with your key:',
     accessTitle: 'Request a key',
     access:
       'Keys are issued by the coordination team. Get in touch to connect your registry or agent:',
@@ -73,6 +75,8 @@ const S = {
       ['POST', '/score', 'Compare a record against your own candidates (nothing stored).'],
       ['POST', '/match', 'Is this person already in the federated index?'],
       ['POST', '/persons', 'Dedupe-on-ingest + federate (link-back required).'],
+      ['GET', '/persons/status', 'Read canonical status signals for your externalId.'],
+      ['GET', '/persons/changes', 'Sync accepted changes from a cursor.'],
       ['GET', '/persons', 'Search the index.'],
     ],
   },

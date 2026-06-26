@@ -9,6 +9,8 @@ tools so AI agents can dedupe and federate records.
 - **`score_persons`** — score one record vs. a candidate list (pure; dedupe your own batch).
 - **`search_persons`** — search the federated index by name / estado.
 - **`submit_person`** — federate a record (dedupe-on-ingest; link-back required).
+- **`get_person_status`** — reconcile your own `externalId` against accepted duplicate/status signals.
+- **`list_person_changes`** — poll accepted records changed since your last sync cursor.
 
 PII: cédula and photo hashes are match-only and never returned.
 

@@ -16,7 +16,8 @@ const PERSON_INPUT = {
     cedula: { type: 'string', maxLength: 20, nullable: true, description: 'Venezuelan national ID. Used ONLY as a match key — never returned.' },
     photoPhash: { type: 'string', pattern: '^[0-9a-fA-F]{16}$', nullable: true, description: '16-hex dHash of the photo (computed by the caller).' },
     status: { type: 'string', enum: ['missing', 'found_safe', 'found_injured', 'deceased', 'unknown'], nullable: true },
-    lastSeenAt: { type: 'string', maxLength: 40, nullable: true },
+    lastSeenAt: { type: 'string', maxLength: 40, nullable: true, description: 'When the person was last seen.' },
+    sourceUpdatedAt: { type: 'string', maxLength: 40, nullable: true, description: 'Timestamp of this status/update in your source system. Existing rows only change status when this is newer.' },
   },
 } as const;
 
@@ -37,9 +38,26 @@ const MATCH_OUT = {
     clusterSize: { type: 'integer' },
     isMultiPerson: { type: 'boolean' },
     lastSeenAt: { type: 'string', nullable: true },
+    sourceUpdatedAt: { type: 'string', nullable: true },
+    updatedAt: { type: 'string', nullable: true, description: 'Respuesta VE public-projection update time; use as the changes-feed cursor.' },
     score: { type: 'number', description: '0–1 match score vs the input.' },
-    method: { type: 'string', enum: ['cedula', 'photo', 'fuzzy', 'cedula_conflict', 'photo_conflict', 'multi_person', 'none'] },
+    method: { type: 'string', enum: ['cedula', 'photo', 'fuzzy', 'cedula_conflict', 'cedula_typo', 'cedula_mismatch', 'photo_conflict', 'multi_person', 'none'] },
     confidence: { type: 'string', enum: ['confirmed', 'possible', 'review', 'none'] },
+  },
+} as const;
+
+const STATUS_SUMMARY = {
+  type: 'object',
+  properties: {
+    status: { type: 'string', enum: ['missing', 'found_safe', 'found_injured', 'deceased', 'unknown'] },
+    hasConflict: { type: 'boolean', description: 'True when the cluster mixes open and resolved source reports.' },
+    size: { type: 'integer' },
+    openCount: { type: 'integer' },
+    resolvedCount: { type: 'integer' },
+    suggestedAction: { type: 'string', enum: ['keep_search_open', 'review_resolution', 'mark_resolved', 'review_conflict'] },
+    lastUpdatedAt: { type: 'string', nullable: true },
+    sourceUpdatedAt: { type: 'string', nullable: true },
+    sources: { type: 'array', items: { type: 'string' } },
   },
 } as const;
 
@@ -52,8 +70,8 @@ const SPEC = {
       'Match and deduplicate missing-person records against a federated index for the 2026 Venezuela earthquake response. ' +
       'PII policy: cédula and photo hashes are used only to FIND matches and are never returned; responses carry only the ' +
       'public metadata the source registries already show, plus a link back to each source. Grouping is advisory — the API ' +
-      'never destructively merges records. Intake quality is also gated: suspicious or unusable records are stored for ' +
-      'coordinator review and excluded from public search until accepted.',
+      'never destructively merges records. Status sync is timestamp-aware: an older partner update cannot overwrite a newer source status. ' +
+      'Intake quality is also gated: suspicious or unusable records are stored for coordinator review and excluded from public search until accepted.',
     contact: { name: 'Respuesta VE', url: 'https://respuestave.org' },
     license: { name: 'Humanitarian use', url: 'https://respuestave.org' },
   },
@@ -63,7 +81,7 @@ const SPEC = {
     securitySchemes: {
       ApiKeyAuth: { type: 'http', scheme: 'bearer', description: 'Partner API key: `Authorization: Bearer rvk_…` (or `x-api-key`). Per-key rate limits apply (HTTP 429 with Retry-After). Scopes: score, match, search, ingest.' },
     },
-    schemas: { PersonInput: PERSON_INPUT, Match: MATCH_OUT },
+    schemas: { PersonInput: PERSON_INPUT, Match: MATCH_OUT, StatusSummary: STATUS_SUMMARY },
     responses: {
       Unauthorized: { description: 'Missing/invalid key, or insufficient scope.' },
       RateLimited: { description: 'Per-key rate limit exceeded. See Retry-After.' },
@@ -105,7 +123,7 @@ const SPEC = {
     '/persons': {
       post: {
         summary: 'Dedupe-on-ingest: federate a record into the shared index.',
-        description: 'Finds likely matches, then stores via the controlled federation path (link-back required; consent/photo forced off). Idempotent per (source, externalId). Never auto-merges. Low-quality records return qualityStatus="needs_review" and stay out of public search until a coordinator accepts them.',
+        description: 'Finds likely matches, then stores via the controlled federation path (link-back required; consent/photo forced off). Idempotent per API key + externalId. Never auto-merges. Exact cédula/photo matches create advisory edges inside the DB. Low-quality records return qualityStatus="needs_review" and stay out of public search until a coordinator accepts them. Use record.sourceUpdatedAt when changing status so stale source data cannot overwrite a newer update.',
         security: [{ ApiKeyAuth: [] }],
         requestBody: { required: true, content: { 'application/json': { schema: {
           type: 'object', required: ['record', 'externalId', 'externalUrl'], properties: {
@@ -126,6 +144,29 @@ const SPEC = {
           { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 } },
         ],
         responses: { '200': { description: 'results: array of redacted records.' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
+      },
+    },
+    '/persons/status': {
+      get: {
+        summary: 'Get the canonical status signals for your own external record.',
+        description: 'Looks up the record namespaced to your API key and externalId, then returns its accepted duplicate/status signals. If another source reports the same person as found while your source remains open, cluster.suggestedAction becomes review_resolution.',
+        security: [{ ApiKeyAuth: [] }],
+        parameters: [
+          { name: 'externalId', in: 'query', required: true, schema: { type: 'string', maxLength: 200 }, description: 'Your stable record id used in POST /persons.' },
+        ],
+        responses: { '200': { description: 'record, qualityStatus, cluster StatusSummary, and members.' }, '404': { description: 'No record for this API key + externalId.' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
+      },
+    },
+    '/persons/changes': {
+      get: {
+        summary: 'Poll accepted public records changed since a cursor.',
+        description: 'Use this to keep downstream sites current without scraping. Pass the previous nextSince value as since; responses are public-safe records ordered by updatedAt.',
+        security: [{ ApiKeyAuth: [] }],
+        parameters: [
+          { name: 'since', in: 'query', required: true, schema: { type: 'string', format: 'date-time' } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 500, default: 100 } },
+        ],
+        responses: { '200': { description: 'results plus nextSince cursor.' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
       },
     },
   },

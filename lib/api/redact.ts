@@ -24,6 +24,8 @@ export interface PublicRow {
   cluster_size: number;
   is_multi_person: boolean;
   last_seen_at: string | null;
+  source_updated_at: string | null;
+  updated_at: string | null;
 }
 
 /** What a partner sees for each record — strictly the public projection. */
@@ -41,6 +43,8 @@ export interface RedactedRecord {
   clusterSize: number;
   isMultiPerson: boolean;
   lastSeenAt: string | null;
+  sourceUpdatedAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface MatchOut extends RedactedRecord {
@@ -65,6 +69,7 @@ export function redact(row: PublicRow): RedactedRecord {
     clusterSize: row.cluster_size,
     isMultiPerson: row.is_multi_person,
     lastSeenAt: row.last_seen_at,
+    sourceUpdatedAt: row.source_updated_at,
+    updatedAt: row.updated_at,
   };
 }
-
