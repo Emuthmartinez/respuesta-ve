@@ -69,7 +69,7 @@ const dict = {
       brand_label: 'Respuesta VE · Terremoto 2026',
       heading: '¿Dónde estás?',
       subtext:
-        'Esto adapta la plataforma a cómo puedes ayudar o recibir ayuda. No se guarda en ningún servidor.',
+        'Esto adapta la plataforma a cómo puedes ayudar o recibir ayuda.',
       inside_btn: 'Estoy en Venezuela',
       inside_sub: 'Mapa de daños, recursos, pedir/ofrecer ayuda',
       outside_btn: 'Estoy fuera de Venezuela',
@@ -248,7 +248,7 @@ const dict = {
       brand_label: 'Respuesta VE · Earthquake 2026',
       heading: 'Where are you?',
       subtext:
-        'This tailors the platform to how you can help or receive help. It is never sent to any server.',
+        'This tailors the platform to how you can help or receive help.',
       inside_btn: "I'm in Venezuela",
       inside_sub: 'Damage map, resources, request/offer help',
       outside_btn: "I'm outside Venezuela",
