@@ -10,6 +10,10 @@ can ask *"is this person already reported?"* and federate records as they ingest
 - **PII:** cédula and photo hashes are **match-only, never returned**. Responses
   carry only the public metadata the source registries already show, plus a
   link back to each source. The API never destructively merges records.
+- **Quality gate:** suspicious intake (initials-only, placeholder/test names,
+  fictional/meme names, missing link-backs, or weak identity records) is stored
+  with `qualityStatus: "needs_review"` and excluded from public search/match
+  until a coordinator accepts it.
 
 ## Endpoints
 

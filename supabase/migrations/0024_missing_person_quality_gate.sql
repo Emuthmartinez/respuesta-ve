@@ -236,7 +236,7 @@ begin
   return jsonb_build_object('ok', true, 'id', rec_id,
                             'action', case when existed then 'updated' else 'inserted' end,
                             'quality_status', out_quality_status,
-                            'quality_flags', coalesce(out_quality_flags, '{}'));
+                            'quality_flags', coalesce(out_quality_flags, '{}'::text[]));
 end; $$;
 
 revoke execute on function public.submit_missing_person_record(
@@ -269,7 +269,7 @@ begin
     from public.missing_person_pins p
     where p.retracted_at is null
       and p.duplicate_of is null
-      and p.quality_status <> 'accepted'
+      and p.quality_status = 'needs_review'
     order by p.created_at desc
     limit greatest(1, least(500, p_limit));
 end; $$;
