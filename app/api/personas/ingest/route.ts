@@ -17,7 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { parsePfif, pfifDisplayName, type PfifPerson } from '@/lib/pfif';
 import {
-  findPossibleDuplicates, nameBlockKey, detectMultiPerson, normalizeCedula,
+  assessMissingRecordQuality, findPossibleDuplicates, nameBlockKey, detectMultiPerson, normalizeCedula,
   type MatchableRecord,
 } from '@/lib/missing-persons';
 
@@ -112,7 +112,10 @@ export async function POST(req: NextRequest) {
   // + earlier batch members), upsert, then add this row to the pool so later
   // members can match it. Edges are one-directional but the UI clusters them
   // with union-find, so a later "B → A" edge still groups {A,B}.
-  const results: { personRecordId: string; action: string; possibleDuplicates: number; error?: string }[] = [];
+  const results: {
+    personRecordId: string; action: string; possibleDuplicates: number;
+    qualityStatus: string; qualityFlags: string[]; error?: string;
+  }[] = [];
   let inserted = 0;
   let updated = 0;
   let failed = 0;
@@ -120,15 +123,31 @@ export async function POST(req: NextRequest) {
   for (const p of usable) {
     // Exclude this record's own prior row (same source URL) so a re-ingest
     // never flags itself as a duplicate.
+    const matchable = toMatchable(p);
+    const quality = assessMissingRecordQuality({
+      displayName: matchable.displayName,
+      age: matchable.age,
+      estado: matchable.estado,
+      municipio: matchable.municipio,
+      sourceUrl: p.sourceUrl,
+    });
     const cands = pool.filter((c) => c.externalUrl !== p.sourceUrl);
-    const dups = findPossibleDuplicates(toMatchable(p), cands);
+    const dups = quality.status === 'accepted' ? findPossibleDuplicates(matchable, cands) : [];
     const dupIds = dups.map((d) => d.id);
     const topScore = dups[0]?.score ?? null;
 
     if (dryRun) {
       // No DB write, so use a synthetic id to let later members still match.
-      pool.push({ id: `batch:${p.personRecordId}`, externalUrl: p.sourceUrl, ...toMatchable(p) });
-      results.push({ personRecordId: p.personRecordId, action: 'dry_run', possibleDuplicates: dups.length });
+      if (quality.status === 'accepted') {
+        pool.push({ id: `batch:${p.personRecordId}`, externalUrl: p.sourceUrl, ...matchable });
+      }
+      results.push({
+        personRecordId: p.personRecordId,
+        action: 'dry_run',
+        possibleDuplicates: dups.length,
+        qualityStatus: quality.status,
+        qualityFlags: quality.flags,
+      });
       continue;
     }
 
@@ -157,18 +176,33 @@ export async function POST(req: NextRequest) {
       p_name_phonetic: nameBlockKey(name) || null,
       p_is_multi_person: detectMultiPerson(name),
       p_cluster_reason: dupIds.length ? ['name'] : null,
+      p_quality_status: quality.status,
+      p_quality_flags: quality.flags,
     });
 
     const r = data as { ok?: boolean; id?: string; action?: string; error?: string } | null;
     if (error || !r?.ok) {
       failed++;
-      results.push({ personRecordId: p.personRecordId, action: 'error', possibleDuplicates: dups.length, error: error?.message ?? r?.error ?? 'unknown' });
+      results.push({
+        personRecordId: p.personRecordId,
+        action: 'error',
+        possibleDuplicates: dups.length,
+        qualityStatus: quality.status,
+        qualityFlags: quality.flags,
+        error: error?.message ?? r?.error ?? 'unknown',
+      });
     } else {
       if (r.action === 'updated') updated++;
       else inserted++;
       // Add the freshly-written row to the pool so later batch members match it.
-      if (r.id) pool.push({ id: r.id, externalUrl: p.sourceUrl, ...toMatchable(p) });
-      results.push({ personRecordId: p.personRecordId, action: r.action ?? 'inserted', possibleDuplicates: dups.length });
+      if (r.id && quality.status === 'accepted') pool.push({ id: r.id, externalUrl: p.sourceUrl, ...matchable });
+      results.push({
+        personRecordId: p.personRecordId,
+        action: r.action ?? 'inserted',
+        possibleDuplicates: dups.length,
+        qualityStatus: quality.status,
+        qualityFlags: quality.flags,
+      });
     }
   }
 

@@ -116,6 +116,100 @@ export function detectMultiPerson(raw: string | null | undefined): boolean {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Intake quality gate (spam/garbage quarantine)
+// ─────────────────────────────────────────────────────────────────────────
+
+export type MissingRecordQualityStatus = 'accepted' | 'needs_review';
+export type MissingRecordQualityFlag =
+  | 'missing_link_back'
+  | 'missing_name'
+  | 'initials_only'
+  | 'placeholder_name'
+  | 'fictional_or_meme'
+  | 'weak_identity'
+  | 'invalid_age';
+
+export interface MissingRecordQualityInput {
+  displayName: string | null;
+  age: number | null;
+  estado: string | null;
+  municipio: string | null;
+  sourceUrl?: string | null;
+  cedulaNorm?: string | null;
+  photoPhash?: string | null;
+}
+
+export interface MissingRecordQuality {
+  status: MissingRecordQualityStatus;
+  flags: MissingRecordQualityFlag[];
+}
+
+const PLACEHOLDER_NAMES = new Set([
+  'anonimo', 'anonima', 'desconocido', 'desconocida', 'no identificado',
+  'no identificada', 'sin nombre', 'sin datos', 'n a', 'na', 'test',
+  'prueba', 'asdf', 'qwerty', 'xxx',
+]);
+
+const NON_PERSON_PATTERNS = [
+  /\bminion\b/,
+  /\bsuperman\b/,
+  /\bbatman\b/,
+  /\bspiderman\b/,
+  /\bhombre arana\b/,
+  /\bgoku\b/,
+  /\bpikachu\b/,
+  /\bmickey\b/,
+  /\bbarbie\b/,
+  /\bhulk\b/,
+  /\bshrek\b/,
+  /\bminecraft\b/,
+  /\broblox\b/,
+];
+
+function isInitialsOnly(raw: string): boolean {
+  const letters = raw.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z]/g, '');
+  if (letters.length === 0) return false;
+  if (letters.length <= 2) return true;
+  const tokens = raw.split(/[\s.]+/).map((t) => t.trim()).filter(Boolean);
+  return tokens.length >= 2 && tokens.every((t) => /^[A-Za-z]$/.test(t));
+}
+
+/**
+ * Decide whether a federated missing-person record is safe to publish/search.
+ * Suspicious records are kept in the database for coordinator review, but are
+ * excluded from the public view/API until accepted. This is deliberately a
+ * quarantine, not an automatic delete.
+ */
+export function assessMissingRecordQuality(input: MissingRecordQualityInput): MissingRecordQuality {
+  const flags: MissingRecordQualityFlag[] = [];
+  const rawName = input.displayName?.trim() ?? '';
+  const normalized = normalizeName(rawName);
+  const nameTokens = tokenize(normalized);
+  const hasStrongId = !!input.cedulaNorm || !!input.photoPhash;
+  const hasLocation = !!(input.estado?.trim() || input.municipio?.trim());
+
+  if (!input.sourceUrl?.trim()) flags.push('missing_link_back');
+  if (!rawName || !normalized) flags.push('missing_name');
+  else {
+    if (isInitialsOnly(rawName)) flags.push('initials_only');
+    if (PLACEHOLDER_NAMES.has(normalized)) flags.push('placeholder_name');
+    if (NON_PERSON_PATTERNS.some((re) => re.test(normalized))) flags.push('fictional_or_meme');
+  }
+
+  if (input.age != null && (!Number.isFinite(input.age) || input.age < 0 || input.age > 130)) {
+    flags.push('invalid_age');
+  }
+
+  if (!hasStrongId && nameTokens.length < 2) flags.push('weak_identity');
+  if (!hasStrongId && !hasLocation && nameTokens.length < 3) flags.push('weak_identity');
+
+  return {
+    status: flags.length ? 'needs_review' : 'accepted',
+    flags: [...new Set(flags)],
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Blocking (keeps matching ~O(n) at 57k scale)
 // ─────────────────────────────────────────────────────────────────────────
 

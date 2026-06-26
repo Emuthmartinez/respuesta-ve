@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   nameBlockKey, blockKeys, detectMultiPerson, normalizeCedula,
-  scoreRecords, clusterByDuplicateEdges,
+  scoreRecords, clusterByDuplicateEdges, assessMissingRecordQuality,
 } from '../../lib/missing-persons.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -26,6 +26,8 @@ const env = Object.fromEntries(
 );
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SOURCE = 'desaparecidosterremotovenezuela';
+const EXTERNAL_URL = 'https://desaparecidosterremotovenezuela.com';
 
 // free-text ubicacion → estado (the quake zone)
 const ESTADO_KEYS = [
@@ -90,19 +92,33 @@ const recs = raw.map((r) => {
   const name = (r.nombre || '').trim();
   const cedulaNorm = extractCedula(`${name} ${r.descripcion || ''}`);
   const display = cleanName(name); // cédula/phone scrubbed (extracted above)
+  const photoPhash = phashMap.get(r.id) || null;
+  const isMultiPerson = detectMultiPerson(name);
+  const quality = assessMissingRecordQuality({
+    displayName: display,
+    age: Number.isFinite(r.edad) ? r.edad : null,
+    estado,
+    municipio,
+    sourceUrl: EXTERNAL_URL,
+    cedulaNorm,
+    photoPhash,
+  });
   return {
     localId: crypto.randomUUID(), origId: r.id,
     displayName: display, age: Number.isFinite(r.edad) ? r.edad : null,
     estado, municipio, status: mapStatus(r.estado), notes: sanitize(r.descripcion),
     lastSeenAt: r.fecha || null, cedula: cedulaNorm, cedulaNorm,
-    photoPhash: phashMap.get(r.id) || null, isMultiPerson: detectMultiPerson(name),
-    namePhonetic: nameBlockKey(display || name),
+    photoPhash, isMultiPerson, namePhonetic: nameBlockKey(display || name),
+    qualityStatus: quality.status, qualityFlags: quality.flags,
   };
 });
 
 // ── blocking + scoring → edges ──
 const buckets = new Map();
-recs.forEach((r, i) => { for (const k of blockKeys(r)) (buckets.get(k) ?? buckets.set(k, []).get(k)).push(i); });
+recs.forEach((r, i) => {
+  if (r.qualityStatus !== 'accepted') return;
+  for (const k of blockKeys(r)) (buckets.get(k) ?? buckets.set(k, []).get(k)).push(i);
+});
 const edges = new Map(recs.map((r) => [r.localId, new Set()]));
 const reasonOf = new Map(recs.map((r) => [r.localId, new Set()]));
 const seenPair = new Set();
@@ -128,6 +144,7 @@ const multi = clusters.filter((c) => c.length > 1).sort((a, b) => b.length - a.l
 
 console.log('═══ DEDUP RESULTS ═══');
 console.log('raw records   :', recs.length);
+console.log('needs review  :', recs.filter((r) => r.qualityStatus === 'needs_review').length);
 console.log('comparisons   :', comparisons, `(vs ${((recs.length * (recs.length - 1)) / 2).toLocaleString()} all-pairs)`);
 console.log('edges         :', edgeCount);
 console.log('distinct people:', clusters.length, `(${recs.length - clusters.length} duplicates collapsed)`);
@@ -138,8 +155,6 @@ if (!INGEST) { console.log('\n(dry-run — pass --ingest to write)'); process.ex
 if (!SUPABASE_URL || !ANON) { console.error('missing NEXT_PUBLIC_SUPABASE_URL / ANON_KEY'); process.exit(1); }
 
 // ── ingest (clusters concurrent, members sequential) ──
-const SOURCE = 'desaparecidosterremotovenezuela';
-const EXTERNAL_URL = 'https://desaparecidosterremotovenezuela.com';
 const dbId = new Map();
 let inserted = 0, failed = 0;
 async function rpc(rec, neighborDbIds) {
@@ -156,6 +171,8 @@ async function rpc(rec, neighborDbIds) {
       p_cedula_normalized: rec.cedulaNorm, p_photo_phash: rec.photoPhash,
       p_name_phonetic: rec.namePhonetic || null, p_is_multi_person: rec.isMultiPerson,
       p_cluster_reason: [...reasonOf.get(rec.localId)],
+      p_quality_status: rec.qualityStatus,
+      p_quality_flags: rec.qualityFlags,
     }),
   });
   const j = await res.json().catch(() => null);

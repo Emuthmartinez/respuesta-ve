@@ -9,7 +9,7 @@ import { authenticate, apiError, apiOk, readJsonBody } from '@/lib/api/auth';
 import { IngestRequest, toMatchable, zodMessage } from '@/lib/api/schemas';
 import { matchAgainstIndex, searchIndex } from '@/lib/api/matching';
 import { getSupabaseServer } from '@/lib/supabase/server';
-import { normalizeCedula, nameBlockKey, detectMultiPerson } from '@/lib/missing-persons';
+import { assessMissingRecordQuality, nameBlockKey } from '@/lib/missing-persons';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,8 +33,20 @@ export async function POST(req: NextRequest) {
   const recordKey = `partner-${auth.keyId}:${externalId}`;
   const effectiveSource = auth.ingestSource;
 
-  // 1) Surface likely existing matches (advisory; we never auto-merge).
-  const matches = await matchAgainstIndex(sb, toMatchable(record), 10);
+  const matchable = toMatchable(record);
+  const quality = assessMissingRecordQuality({
+    displayName: record.name,
+    age: record.age ?? null,
+    estado: record.estado ?? null,
+    municipio: record.municipio ?? null,
+    sourceUrl: externalUrl,
+    cedulaNorm: matchable.cedulaNorm,
+    photoPhash: matchable.photoPhash,
+  });
+
+  // 1) Surface likely existing matches (advisory; we never auto-merge). Low
+  // quality records are quarantined first so they cannot contaminate clusters.
+  const matches = quality.status === 'accepted' ? await matchAgainstIndex(sb, matchable, 10) : [];
   const dupIds = matches.filter((m) => m.confidence !== 'review').map((m) => m.id);
 
   // 2) Store via the controlled federation RPC. The secret bypass token (a
@@ -59,18 +71,31 @@ export async function POST(req: NextRequest) {
     p_source_updated_at: record.lastSeenAt ?? null,
     p_possible_duplicate_ids: dupIds.length ? dupIds : null,
     p_dedupe_score: matches[0]?.score ?? null,
-    p_cedula_normalized: normalizeCedula(record.cedula),
-    p_photo_phash: record.photoPhash ? record.photoPhash.toLowerCase() : null,
+    p_cedula_normalized: matchable.cedulaNorm,
+    p_photo_phash: matchable.photoPhash,
     p_name_phonetic: nameBlockKey(record.name) || null,
-    p_is_multi_person: detectMultiPerson(record.name),
+    p_is_multi_person: !!matchable.isMultiPerson,
     p_cluster_reason: dupIds.length ? ['name'] : null,
+    p_quality_status: quality.status,
+    p_quality_flags: quality.flags,
   });
 
-  const r = data as { ok?: boolean; id?: string; action?: string; error?: string } | null;
+  const r = data as {
+    ok?: boolean; id?: string; action?: string; error?: string;
+    quality_status?: string; quality_flags?: string[];
+  } | null;
   if (error || !r?.ok) {
     return apiError(r?.error ?? 'ingest_failed', 502);
   }
-  return apiOk({ id: r.id, action: r.action, possibleMatches: matches, matchCount: matches.length }, auth, r.action === 'inserted' ? 201 : 200);
+  const status = quality.status === 'needs_review' ? 202 : r.action === 'inserted' ? 201 : 200;
+  return apiOk({
+    id: r.id,
+    action: r.action,
+    qualityStatus: r.quality_status ?? quality.status,
+    qualityFlags: r.quality_flags ?? quality.flags,
+    possibleMatches: matches,
+    matchCount: matches.length,
+  }, auth, status);
 }
 
 export async function GET(req: NextRequest) {

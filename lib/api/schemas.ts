@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { MISSING_STATUSES } from '@/lib/api/redact';
-import { normalizeCedula, type MatchableRecord } from '@/lib/missing-persons';
+import { detectMultiPerson, normalizeCedula, type MatchableRecord } from '@/lib/missing-persons';
 
 const str = (max: number) => z.string().trim().min(1).max(max);
 
@@ -33,7 +33,7 @@ export function toMatchable(p: PersonInputT, id?: string): MatchableRecord {
     municipio: p.municipio ?? null,
     cedulaNorm: normalizeCedula(p.cedula),
     photoPhash: p.photoPhash ? p.photoPhash.toLowerCase() : null,
-    isMultiPerson: false, // computed server-side on ingest; never trusted from input
+    isMultiPerson: detectMultiPerson(p.name), // computed server-side; never trusted from caller input
   };
 }
 
