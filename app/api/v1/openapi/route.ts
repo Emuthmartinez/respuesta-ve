@@ -61,17 +61,121 @@ const STATUS_SUMMARY = {
   },
 } as const;
 
+const ENTITY_CHANNEL_INPUT = {
+  type: 'object',
+  required: ['type'],
+  additionalProperties: false,
+  anyOf: [{ required: ['url'] }, { required: ['displayText'] }],
+  properties: {
+    type: { type: 'string', enum: ['donation_url', 'volunteer_form', 'supply_dropoff', 'website', 'phone_public', 'whatsapp_public', 'email_public', 'social', 'other'] },
+    label: { type: 'string', maxLength: 120, nullable: true },
+    url: { type: 'string', format: 'uri', pattern: '^https?://', maxLength: 500, nullable: true },
+    displayText: { type: 'string', maxLength: 200, nullable: true },
+    instructions: { type: 'string', maxLength: 500, nullable: true },
+    isPrimary: { type: 'boolean', default: false },
+  },
+} as const;
+
+const ENTITY_NEED_INPUT = {
+  type: 'object',
+  required: ['title'],
+  additionalProperties: false,
+  properties: {
+    category: { type: 'string', enum: ['medical_supplies', 'beds', 'blood', 'water', 'food', 'shelter', 'volunteers', 'transport', 'fuel', 'power', 'communications', 'sanitation', 'funds', 'other'], default: 'other' },
+    title: { type: 'string', maxLength: 160 },
+    description: { type: 'string', maxLength: 700, nullable: true },
+    urgency: { type: 'string', enum: ['critical', 'high', 'normal', 'low'], default: 'normal' },
+    status: { type: 'string', enum: ['open', 'in_progress', 'fulfilled', 'cancelled', 'expired'], default: 'open' },
+    quantity: { type: 'number', exclusiveMinimum: 0, nullable: true },
+    unit: { type: 'string', maxLength: 60, nullable: true },
+    expiresAt: { type: 'string', format: 'date-time', nullable: true },
+  },
+} as const;
+
+const ENTITY_CHANNEL_OUT = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    type: { type: 'string' },
+    label: { type: 'string', nullable: true },
+    url: { type: 'string', format: 'uri', nullable: true },
+    displayText: { type: 'string', nullable: true },
+    instructions: { type: 'string', nullable: true },
+    isPrimary: { type: 'boolean' },
+    sourceUpdatedAt: { type: 'string', nullable: true },
+    updatedAt: { type: 'string' },
+  },
+} as const;
+
+const ENTITY_NEED_OUT = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    category: { type: 'string' },
+    title: { type: 'string' },
+    description: { type: 'string', nullable: true },
+    urgency: { type: 'string' },
+    status: { type: 'string' },
+    quantity: { type: 'number', nullable: true },
+    unit: { type: 'string', nullable: true },
+    sourceUpdatedAt: { type: 'string', nullable: true },
+    expiresAt: { type: 'string' },
+    updatedAt: { type: 'string' },
+  },
+} as const;
+
+const ENTITY_INPUT = {
+  type: 'object',
+  required: ['kind', 'name'],
+  additionalProperties: false,
+  properties: {
+    kind: { type: 'string', enum: ['hospital', 'clinic', 'field_clinic', 'shelter', 'donation_center', 'supply_hub', 'pharmacy', 'water_point', 'official_channel', 'organization', 'community_group', 'other'] },
+    name: { type: 'string', maxLength: 200 },
+    description: { type: 'string', maxLength: 900, nullable: true },
+    estado: { type: 'string', maxLength: 80, nullable: true },
+    municipio: { type: 'string', maxLength: 120, nullable: true },
+    lat: { type: 'number', minimum: -90, maximum: 90, nullable: true, description: 'Stored precise; public responses are fuzzed.' },
+    lng: { type: 'number', minimum: -180, maximum: 180, nullable: true, description: 'Stored precise; public responses are fuzzed.' },
+    address: { type: 'string', maxLength: 300, nullable: true, description: 'Coordinator-only base-table field; not returned by the public API.' },
+    sourceUpdatedAt: { type: 'string', format: 'date-time', nullable: true, description: 'Timestamp in the partner source. Older updates are ignored.' },
+    channels: { type: 'array', maxItems: 20, items: ENTITY_CHANNEL_INPUT, default: [] },
+    needs: { type: 'array', maxItems: 50, items: ENTITY_NEED_INPUT, default: [] },
+  },
+} as const;
+
+const ENTITY_OUT = {
+  type: 'object',
+  description: 'Verified public crisis entity with fuzzed coordinates, public contribution channels, and active needs.',
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    kind: { type: 'string' },
+    name: { type: 'string' },
+    description: { type: 'string', nullable: true },
+    estado: { type: 'string', nullable: true },
+    municipio: { type: 'string', nullable: true },
+    lat: { type: 'number', nullable: true },
+    lng: { type: 'number', nullable: true },
+    source: { type: 'string' },
+    sourceUrl: { type: 'string', format: 'uri' },
+    lastVerifiedAt: { type: 'string', nullable: true },
+    sourceUpdatedAt: { type: 'string', nullable: true },
+    updatedAt: { type: 'string' },
+    channels: { type: 'array', items: ENTITY_CHANNEL_OUT },
+    needs: { type: 'array', items: ENTITY_NEED_OUT },
+  },
+} as const;
+
 const SPEC = {
   openapi: '3.1.0',
   info: {
-    title: 'Respuesta VE — Missing-Person Dedup & Matching API',
-    version: '1.0.0',
+    title: 'Respuesta VE — Humanitarian Federation API',
+    version: '1.1.0',
     description:
-      'Match and deduplicate missing-person records against a federated index for the 2026 Venezuela earthquake response. ' +
+      'Match and deduplicate missing-person records, and federate verified crisis entities for the 2026 Venezuela earthquake response. ' +
       'PII policy: cédula and photo hashes are used only to FIND matches and are never returned; responses carry only the ' +
-      'public metadata the source registries already show, plus a link back to each source. Grouping is advisory — the API ' +
-      'never destructively merges records. Status sync is timestamp-aware: an older partner update cannot overwrite a newer source status. ' +
-      'Intake quality is also gated: suspicious or unusable records are stored for coordinator review and excluded from public search until accepted.',
+      'public metadata the source registries already show, plus a link back to each source. Entity responses expose only verified ' +
+      'public data: fuzzed coordinates, active needs, and public contribution channels. Grouping is advisory — the API never destructively merges records. ' +
+      'Status/entity sync is timestamp-aware: older partner updates cannot overwrite newer source status. Intake quality is also gated.',
     contact: { name: 'Respuesta VE', url: 'https://respuestave.org' },
     license: { name: 'Humanitarian use', url: 'https://respuestave.org' },
   },
@@ -81,7 +185,15 @@ const SPEC = {
     securitySchemes: {
       ApiKeyAuth: { type: 'http', scheme: 'bearer', description: 'Partner API key: `Authorization: Bearer rvk_…` (or `x-api-key`). Per-key rate limits apply (HTTP 429 with Retry-After). Scopes: score, match, search, ingest.' },
     },
-    schemas: { PersonInput: PERSON_INPUT, Match: MATCH_OUT, StatusSummary: STATUS_SUMMARY },
+    schemas: {
+      PersonInput: PERSON_INPUT,
+      Match: MATCH_OUT,
+      StatusSummary: STATUS_SUMMARY,
+      EntityInput: ENTITY_INPUT,
+      EntityChannel: ENTITY_CHANNEL_OUT,
+      EntityNeed: ENTITY_NEED_OUT,
+      Entity: ENTITY_OUT,
+    },
     responses: {
       Unauthorized: { description: 'Missing/invalid key, or insufficient scope.' },
       RateLimited: { description: 'Per-key rate limit exceeded. See Retry-After.' },
@@ -167,6 +279,55 @@ const SPEC = {
           { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 500, default: 100 } },
         ],
         responses: { '200': { description: 'results plus nextSince cursor.' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
+      },
+    },
+    '/entities': {
+      post: {
+        summary: 'Federate a verified crisis entity with current needs and public contribution channels.',
+        description: 'Use for hospitals, clinics, shelters, supply hubs, vetted orgs, and official channels. Partners provide a sourceUrl link-back and stable externalId. Public exposure requires coordinator verification or an API key marked entity_auto_verify.',
+        security: [{ ApiKeyAuth: [] }],
+        requestBody: { required: true, content: { 'application/json': { schema: {
+          type: 'object', required: ['entity', 'externalId', 'sourceUrl'], properties: {
+            entity: { $ref: '#/components/schemas/EntityInput' },
+            externalId: { type: 'string', maxLength: 200 },
+            sourceUrl: { type: 'string', format: 'uri', pattern: '^https?://', maxLength: 500 },
+          },
+        } } } },
+        responses: { '201': { description: 'Inserted.' }, '200': { description: 'Updated or stale_ignored.' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
+      },
+      get: {
+        summary: 'Search verified crisis entities.',
+        security: [{ ApiKeyAuth: [] }],
+        parameters: [
+          { name: 'q', in: 'query', schema: { type: 'string' }, description: 'Name/description substring.' },
+          { name: 'kind', in: 'query', schema: { type: 'string' } },
+          { name: 'estado', in: 'query', schema: { type: 'string' } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 25 } },
+        ],
+        responses: { '200': { description: 'results: array of Entity.' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
+      },
+    },
+    '/entities/changes': {
+      get: {
+        summary: 'Poll verified crisis entities changed since a cursor.',
+        description: 'Use this to keep downstream hospital/org/needs surfaces current without scraping.',
+        security: [{ ApiKeyAuth: [] }],
+        parameters: [
+          { name: 'since', in: 'query', required: true, schema: { type: 'string', format: 'date-time' } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 500, default: 100 } },
+        ],
+        responses: { '200': { description: 'results plus nextSince cursor.' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
+      },
+    },
+    '/badge': {
+      get: {
+        summary: 'Public verification badge lookup by domain.',
+        description: 'Sites can render this to show their domain is verified by Respuesta VE as a federated partner.',
+        security: [],
+        parameters: [
+          { name: 'domain', in: 'query', required: true, schema: { type: 'string', maxLength: 253 } },
+        ],
+        responses: { '200': { description: 'verified true/false plus partner badge metadata when verified.' }, '400': { $ref: '#/components/responses/Invalid' } },
       },
     },
   },

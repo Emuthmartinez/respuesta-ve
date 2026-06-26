@@ -1,7 +1,8 @@
-# Respuesta VE Dedup — MCP server
+# Respuesta VE Federation — MCP server
 
-Exposes the [missing-person dedup/matching API](../scripts/api/README.md) as MCP
-tools so AI agents can dedupe and federate records.
+Exposes the [humanitarian federation API](../scripts/api/README.md) as MCP tools
+so AI agents can dedupe missing-person records, federate crisis entities, sync
+needs, and verify partner badges through the shared Respuesta VE backend.
 
 ## Tools
 
@@ -11,8 +12,14 @@ tools so AI agents can dedupe and federate records.
 - **`submit_person`** — federate a record (dedupe-on-ingest; link-back required).
 - **`get_person_status`** — reconcile your own `externalId` against accepted duplicate/status signals.
 - **`list_person_changes`** — poll accepted records changed since your last sync cursor.
+- **`submit_entity`** — federate a hospital, shelter, supply hub, org, public channel, and active needs.
+- **`search_entities`** — search verified public entities by text, kind, and/or estado.
+- **`list_entity_changes`** — poll verified entities changed since your last sync cursor.
+- **`verify_badge`** — check whether a domain is a verified federation partner.
 
-PII: cédula and photo hashes are match-only and never returned.
+PII: cédula and photo hashes are match-only and never returned. Entity tools
+return only verified public projections: fuzzed coordinates, active needs, public
+channels, and source link-backs.
 
 ## Setup
 
@@ -25,7 +32,7 @@ Configure your MCP client (e.g. Claude Desktop / Code):
 ```json
 {
   "mcpServers": {
-    "respuesta-ve-dedup": {
+    "respuesta-ve-federation": {
       "command": "node",
       "args": ["/absolute/path/to/mcp-server/index.mjs"],
       "env": {
@@ -39,3 +46,7 @@ Configure your MCP client (e.g. Claude Desktop / Code):
 
 Get a key from a Respuesta VE coordinator (`scripts/api/issue-key.mjs`).
 Rate limits are per key; tool results surface `429` + retry hints.
+
+Entity auto-verification, verified domains, and badge labels are coordinator-set
+trust fields. Agent callers cannot self-verify a domain by including it in a
+tool call.

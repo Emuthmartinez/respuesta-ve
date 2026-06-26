@@ -1,15 +1,18 @@
-# Respuesta VE — Dedup & Matching API
+# Respuesta VE — Humanitarian Federation API
 
-Externalizes the missing-person dedup engine so other registries and AI agents
-can ask *"is this person already reported?"* and federate records as they ingest.
+Externalizes the missing-person dedup engine and the verified coordination-entity
+graph so other registries, websites, and AI agents can read/write through one
+trusted backend instead of fragmenting into stale crisis data silos.
 
 - **Base:** `https://respuestave.org/api/v1`
 - **Spec:** `GET /api/v1/openapi` (OpenAPI 3.1) · **Discovery:** `GET /api/v1`
 - **Auth:** `Authorization: Bearer <key>` (or `x-api-key`). Per-key rate limits →
   `429` + `Retry-After`. Remaining quota in `X-RateLimit-Remaining-Minute/Day`.
-- **PII:** cédula and photo hashes are **match-only, never returned**. Responses
-  carry only the public metadata the source registries already show, plus a
-  link back to each source. The API never destructively merges records.
+- **PII:** cédula and photo hashes are **match-only, never returned**. Missing
+  person responses carry only the public metadata the source registries already
+  show, plus a link back to each source. Entity responses carry verified public
+  metadata, fuzzed coordinates, public contribution channels, active needs, and
+  link-backs. The API never destructively merges records.
 - **Status sync:** send `record.sourceUpdatedAt` when changing status. Older or
   untimestamped updates cannot overwrite a newer source status on an existing
   row, which keeps stale re-ingests from reopening or closing searches.
@@ -28,6 +31,10 @@ can ask *"is this person already reported?"* and federate records as they ingest
 | GET | `/persons/status?externalId=` | `search` | Fetch your record plus duplicate/status signals from other accepted sources. |
 | GET | `/persons/changes?since=` | `search` | Poll accepted public records changed since your last cursor. |
 | GET | `/persons?q=&estado=` | `search` | Search the index. |
+| POST | `/entities` | `ingest` | Federate hospitals, clinics, shelters, supply hubs, orgs, needs, and public channels. |
+| GET | `/entities?q=&kind=&estado=` | `search` | Search verified crisis entities. |
+| GET | `/entities/changes?since=` | `search` | Poll verified public entities changed since your last cursor. |
+| GET | `/badge?domain=` | public | Check whether a domain is a verified federation partner. |
 
 ### Example — match
 
@@ -81,6 +88,63 @@ curl -s "https://respuestave.org/api/v1/persons/changes?since=2026-06-26T00:00:0
   -H "Authorization: Bearer $RVK"
 ```
 
+### Example — submit a crisis entity
+
+Use this for hospitals, clinics, shelters, supply hubs, donation centers,
+verified organizations, and official public channels. Public exposure requires
+coordinator verification unless your key is explicitly marked for entity
+auto-verification.
+
+```bash
+curl -s https://respuestave.org/api/v1/entities \
+  -H "Authorization: Bearer $RVK" -H 'Content-Type: application/json' \
+  -d '{
+    "externalId":"hospital-central-123",
+    "sourceUrl":"https://site-b.example/hospitales/123",
+    "entity":{
+      "kind":"hospital",
+      "name":"Hospital Central",
+      "description":"Hospital receiving earthquake injuries",
+      "estado":"Lara",
+      "municipio":"Barquisimeto",
+      "lat":10.067,
+      "lng":-69.347,
+      "sourceUpdatedAt":"2026-06-26T18:30:00Z",
+      "channels":[
+        {"type":"website","url":"https://site-b.example/hospitales/123","isPrimary":true},
+        {"type":"supply_dropoff","displayText":"Entrada de emergencias, 8am-6pm"}
+      ],
+      "needs":[
+        {"category":"medical_supplies","title":"Gasas y solución salina","urgency":"high"},
+        {"category":"blood","title":"Donantes O+","urgency":"critical","expiresAt":"2026-06-28T00:00:00Z"}
+      ]
+    }
+  }'
+```
+
+The response returns the canonical entity id, whether the source row was inserted,
+updated, or ignored as stale, and the verification status. Public reads show only
+verified, unexpired entity projections.
+
+### Example — search and sync entities
+
+```bash
+curl -s "https://respuestave.org/api/v1/entities?kind=hospital&estado=Lara&limit=25" \
+  -H "Authorization: Bearer $RVK"
+
+curl -s "https://respuestave.org/api/v1/entities/changes?since=2026-06-26T00:00:00Z&limit=100" \
+  -H "Authorization: Bearer $RVK"
+```
+
+### Example — partner badge lookup
+
+```bash
+curl -s "https://respuestave.org/api/v1/badge?domain=site-b.example"
+```
+
+Verified badges are coordinator-managed on the partner key. A site cannot claim
+badge trust by sending its own domain in an entity payload.
+
 ## Issuing keys (coordinators)
 
 Keys are generated client-side; only the SHA-256 hash is stored. Use the helper:
@@ -93,8 +157,13 @@ It prints the plaintext key **once** and the `issue_api_key(...)` SQL/RPC call t
 register the hash (run it as a coordinator). Store the key securely — it can't be
 recovered, only revoked (`update partner_api_keys set revoked_at = now() where id=…`).
 
+Entity auto-verification, verified domains, and badge labels are coordinator-set
+trust fields on `partner_api_keys`. Do not expose those settings to partners as
+self-service request fields.
+
 ## MCP (agents)
 
 A stdio MCP server in [`mcp-server/`](../../mcp-server) exposes `match_person`,
 `score_persons`, `search_persons`, `submit_person`, `get_person_status`, and
-`list_person_changes` over this API. See its README.
+`list_person_changes`, plus `submit_entity`, `search_entities`,
+`list_entity_changes`, and `verify_badge` over this API. See its README.

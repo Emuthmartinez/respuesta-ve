@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Respuesta VE — missing-person dedup/matching MCP server.
+// Respuesta VE — humanitarian federation MCP server.
 // Exposes the partner API as agent tools over stdio. Configure with env:
 //   RVK_API_KEY   (required) partner API key (rvk_…)
 //   RVK_API_BASE  (optional) default https://respuestave.org/api/v1
@@ -52,7 +52,61 @@ const pickPerson = (a) => ({
   sourceUpdatedAt: a.sourceUpdatedAt,
 });
 
-const server = new McpServer({ name: 'respuesta-ve-dedup', version: '1.0.0' });
+const ENTITY_KINDS = [
+  'hospital', 'clinic', 'field_clinic', 'shelter', 'donation_center', 'supply_hub',
+  'pharmacy', 'water_point', 'official_channel', 'organization', 'community_group', 'other',
+];
+const NEED_CATEGORIES = [
+  'medical_supplies', 'beds', 'blood', 'water', 'food', 'shelter', 'volunteers',
+  'transport', 'fuel', 'power', 'communications', 'sanitation', 'funds', 'other',
+];
+const NEED_STATUSES = ['open', 'in_progress', 'fulfilled', 'cancelled', 'expired'];
+const CHANNEL_TYPES = [
+  'donation_url', 'volunteer_form', 'supply_dropoff', 'website', 'phone_public',
+  'whatsapp_public', 'email_public', 'social', 'other',
+];
+const URGENCIES = ['critical', 'high', 'normal', 'low'];
+const isTimestamp = (value) => Number.isFinite(Date.parse(value));
+const httpUrl = (max) => z.string().url().max(max)
+  .refine((value) => /^https?:\/\//i.test(value), 'must use http or https');
+
+const CHANNEL = z.object({
+  type: z.enum(CHANNEL_TYPES),
+  label: z.string().max(120).optional(),
+  url: httpUrl(500).optional(),
+  displayText: z.string().max(200).optional(),
+  instructions: z.string().max(500).optional(),
+  isPrimary: z.boolean().optional(),
+}).refine((v) => v.url || v.displayText, {
+  message: 'url or displayText is required',
+});
+const NEED = z.object({
+  category: z.enum(NEED_CATEGORIES).optional(),
+  title: z.string().max(160),
+  description: z.string().max(700).optional(),
+  urgency: z.enum(URGENCIES).optional(),
+  status: z.enum(NEED_STATUSES).optional(),
+  quantity: z.number().positive().optional(),
+  unit: z.string().max(60).optional(),
+  expiresAt: z.string().refine(isTimestamp, 'must be a valid timestamp').optional(),
+});
+const ENTITY = z.object({
+  kind: z.enum(ENTITY_KINDS),
+  name: z.string().max(200),
+  description: z.string().max(900).optional(),
+  estado: z.string().max(80).optional(),
+  municipio: z.string().max(120).optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  address: z.string().max(300).optional(),
+  sourceUpdatedAt: z.string().refine(isTimestamp, 'must be a valid timestamp').optional(),
+  channels: z.array(CHANNEL).max(20).optional(),
+  needs: z.array(NEED).max(50).optional(),
+}).refine((v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null), {
+  message: 'lat and lng must be provided together',
+});
+
+const server = new McpServer({ name: 'respuesta-ve-federation', version: '1.1.0' });
 
 server.registerTool('match_person', {
   description: 'Check whether a missing person is already in the Respuesta VE federated registry. Returns ranked matches (public metadata + source link-backs). Use before creating a new report to avoid duplicates.',
@@ -83,5 +137,40 @@ server.registerTool('list_person_changes', {
   description: 'Poll accepted public missing-person records changed since a cursor. Use nextSince from the previous response as the next since value.',
   inputSchema: { since: z.string().describe('ISO timestamp cursor.'), limit: z.number().int().min(1).max(500).optional() },
 }, async (a) => result(await call('GET', '/persons/changes', { query: { since: a.since, limit: a.limit ?? 100 } })));
+
+server.registerTool('submit_entity', {
+  description: 'Federate a verified crisis entity such as a hospital, shelter, supply hub, organization, public contribution channel, and current needs. Requires a sourceUrl link-back and stable externalId. Public exposure depends on coordinator verification or trusted-key auto-verification.',
+  inputSchema: {
+    entity: ENTITY,
+    externalId: z.string().max(200).describe('Your stable source record id.'),
+    sourceUrl: httpUrl(500).describe('Link back to the source entity record.'),
+  },
+}, async (a) => result(await call('POST', '/entities', {
+  body: { entity: a.entity, externalId: a.externalId, sourceUrl: a.sourceUrl },
+})));
+
+server.registerTool('search_entities', {
+  description: 'Search verified public crisis entities by text, kind, and/or estado. Returns fuzzed coordinates, public channels, active needs, and source link-backs.',
+  inputSchema: {
+    q: z.string().min(2).max(120).optional(),
+    kind: z.enum(ENTITY_KINDS).optional(),
+    estado: z.string().max(80).optional(),
+    limit: z.number().int().min(1).max(100).optional(),
+  },
+}, async (a) => result(await call('GET', '/entities', {
+  query: { q: a.q, kind: a.kind, estado: a.estado, limit: a.limit ?? 25 },
+})));
+
+server.registerTool('list_entity_changes', {
+  description: 'Poll verified public crisis entities changed since a cursor. Use nextSince from the previous response as the next since value.',
+  inputSchema: { since: z.string().describe('ISO timestamp cursor.'), limit: z.number().int().min(1).max(500).optional() },
+}, async (a) => result(await call('GET', '/entities/changes', {
+  query: { since: a.since, limit: a.limit ?? 100 },
+})));
+
+server.registerTool('verify_badge', {
+  description: 'Check whether a domain is verified by Respuesta VE as a federated partner. Use before displaying a partner badge.',
+  inputSchema: { domain: z.string().min(3).max(253) },
+}, async (a) => result(await call('GET', '/badge', { query: { domain: a.domain } })));
 
 await server.connect(new StdioServerTransport());
