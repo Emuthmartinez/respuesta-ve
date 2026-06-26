@@ -1,7 +1,7 @@
 ---
 title: "feat: Add humanitarian federation API trust graph"
 type: feat
-status: active
+status: complete
 date: 2026-06-26
 deepened: 2026-06-26
 ---
@@ -390,7 +390,7 @@ project without persisting test data.
   ESLint, and build complete or blockers are documented precisely.
 - Supabase migration and advisors are recorded.
 
-- [ ] U5. **Code review, deployment, and live smoke**
+- [x] U5. **Code review, deployment, and live smoke**
 
 **Goal:** Review, ship, and verify the federation backend slice on the live
 Worker.
