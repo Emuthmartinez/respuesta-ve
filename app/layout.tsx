@@ -101,6 +101,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <div className="mx-auto max-w-6xl space-y-3">
               <Disclaimer locale={locale} />
               <p className="text-center">{d.footer.text}</p>
+              <p className="text-center">
+                <a href="/desarrolladores" className="font-medium text-zinc-600 hover:text-red-600 hover:underline dark:text-zinc-400">
+                  {locale === 'en' ? 'Developer API · MCP' : 'API para desarrolladores · MCP'}
+                </a>
+              </p>
             </div>
           </footer>
         </LocaleProvider>
