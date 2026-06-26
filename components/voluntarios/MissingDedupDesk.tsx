@@ -147,7 +147,7 @@ export function MissingDedupDesk() {
   async function doMerge(members: Row[], survivor: Row, allowOverride: boolean) {
     setBusy(survivor.id); setMsg('');
     const others = members.filter((m) => m.id !== survivor.id && !m.duplicate_of);
-    let blocked: Row[] = [];
+    const blocked: Row[] = [];
     for (const m of others) {
       const { data, error } = await rpc('set_duplicate_of', {
         p_merged_id: m.id, p_merged_into_id: survivor.id, p_reason_text: 'coordinator merge', p_override_missing: allowOverride,
