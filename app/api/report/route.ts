@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { getSupabaseServer } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -27,6 +27,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'backend_unconfigured' }, { status: 503 });
   }
 
+  // Mint a one-time management token. The raw token is returned to the
+  // submitter (their only handle to later manage/retract the report); only
+  // its sha256 is stored, so possession of the token == ownership.
+  const token = randomBytes(24).toString('hex');
+  const token_hash = createHash('sha256').update(token).digest('hex');
+
   const { data, error } = await sb.rpc('submit_building_report', {
     p_ip_hash: ipHash(req),
     p_lat: body.lat,
@@ -49,11 +55,16 @@ export async function POST(req: Request) {
     p_evacuated: body.evacuated ?? null,
     p_landmark: body.landmark ?? null,
     p_source_channel: 'web_form',
+    p_token_hash: token_hash,
   });
 
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
   }
-  // data is the JSON the RPC returns: { ok, id, status } or { ok:false, error }
-  return NextResponse.json(data, { status: data?.ok ? 200 : 429 });
+  // data is the JSON the RPC returns: { ok, id, status } or { ok:false, error }.
+  // On success, hand back the raw token so the submitter can manage the report.
+  if (data?.ok) {
+    return NextResponse.json({ ...data, token, entity: 'building' }, { status: 200 });
+  }
+  return NextResponse.json(data, { status: 429 });
 }

@@ -31,6 +31,7 @@ const STR = {
     disclaimer_body:
       'los contenidos listados aquí han sido reportados como FALSOS o engañosos. Se muestran únicamente para que puedas reconocerlos y no los difundas. Si crees que algo fue clasificado por error,',
     disclaimer_link: 'contacta a un coordinador',
+    report_cta: 'Reportar desinformación',
     showing_200: 'Mostrando los 200 reportes más recientes.',
     empty_no_reports: 'No hay reportes verificados por el momento.',
     empty_db_error: 'No se pudo conectar con la base de datos. Inténtalo más tarde.',
@@ -49,6 +50,7 @@ const STR = {
     disclaimer_body:
       'The content listed here has been reported as FALSE or misleading. It is shown only so you can recognize it and avoid spreading it. If you believe something was misclassified,',
     disclaimer_link: 'contact a coordinator',
+    report_cta: 'Report misinformation',
     showing_200: 'Showing the 200 most recent reports.',
     empty_no_reports: 'No verified reports at the moment.',
     empty_db_error: 'Could not connect to the database. Please try again later.',
@@ -146,6 +148,16 @@ export default async function DesmentidosPage() {
           {s.disclaimer_link}
         </Link>
         .
+      </div>
+
+      {/* report CTA */}
+      <div className="mt-4 flex justify-end">
+        <Link
+          href="/desmentidos/reportar"
+          className="rounded-full border border-red-600 px-4 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+        >
+          {s.report_cta}
+        </Link>
       </div>
 
       {/* list */}

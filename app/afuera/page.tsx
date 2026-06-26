@@ -126,7 +126,12 @@ export default async function AfueraPage() {
             <h2 className="text-xl font-bold">{da.section2_title}</h2>
             <span className="text-xs text-zinc-400">{da.section2_count(centers.length)}</span>
           </div>
-          <Link href="/afuera/agregar-centro" className="shrink-0 text-xs font-medium text-amber-600 hover:underline">{da.section2_add}</Link>
+          <div className="flex shrink-0 items-center gap-3">
+            <Link href="/afuera/agregar-centro" className="text-xs font-medium text-amber-600 hover:underline">{da.section2_add}</Link>
+            <Link href="/organizaciones/sugerir" className="text-xs font-medium text-zinc-500 hover:underline">
+              {locale === 'en' ? '+ Suggest an org' : '+ Sugerir org'}
+            </Link>
+          </div>
         </div>
         <p className="mb-4 text-sm text-zinc-500">
           {da.section2_desc}
