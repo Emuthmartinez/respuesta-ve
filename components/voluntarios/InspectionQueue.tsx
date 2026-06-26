@@ -4,10 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 import {
-  REQUEST_STATUS_LABEL, URGENCY_LABEL, URGENCY_COLOR, NEEDS_LABEL,
+  URGENCY_COLOR,
   requestStatusLabel, urgencyLabel, needsLabel,
 } from '@/lib/responder';
-import { tr } from '@/lib/i18n';
 import { useLocale } from '@/lib/locale-context';
 
 const STR = {

@@ -217,7 +217,7 @@ const dict = {
       section1_empty: 'No organizations to show yet.',
       org_verified: '✓ verified',
       section2_title: '2 · Donate in person',
-      section2_count: (n: number) => `${n} drop-off center${n !== 1 ? 's' : ''}`,
+      section2_count: (n: number) => `${n} collection center${n !== 1 ? 's' : ''}`,
       section2_desc:
         'Physical centers accepting goods and supplies. Allow location access to sort by proximity.',
       section2_add: '+ Add a center',

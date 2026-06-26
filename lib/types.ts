@@ -43,6 +43,11 @@ export interface MissingPinPublic {
   source: string;
   external_url: string | null;
   photo_url: string | null;
+  // Exposed by migration 0015 for the federated search: age helps families
+  // disambiguate, and possible_duplicate_ids lets the UI cluster scattered
+  // hits into one "posible misma persona" card (advisory — never a merge).
+  age_estimate: number | null;
+  possible_duplicate_ids: string[] | null;
   last_seen_at: string | null;
   created_at: string;
 }
