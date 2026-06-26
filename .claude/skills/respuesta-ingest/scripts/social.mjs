@@ -78,7 +78,7 @@ async function callXpoz(tool, args) {
     }
 
     const text = envelope?.content?.[0]?.text ?? '';
-    const rows = _extractArray(text);
+    const rows = _extractRows(text);
     return { rows, auth: true };
   } catch (err) {
     // execFile non-zero exit (incl. mcporter auth failures printed to stderr),
@@ -90,32 +90,138 @@ async function callXpoz(tool, args) {
 }
 
 /**
- * Pull the first JSON array out of an mcporter text payload, tolerating the
- * several shapes xpoz can return (bare array, or wrapped under a common key).
+ * Extract row objects from an xpoz tool payload.
+ *
+ * xpoz "fast" mode returns a COMPACT text format (not JSON), e.g.:
+ *   status: success
+ *   data:
+ *     results[2]{id,text,authorUsername,createdAtDate,likeCount}:
+ *       "2070…","#25Jun … colapsó …",ReporteYa,"2026-06-26T00:00:00.000Z",14
+ *       "2070…",…
+ * The `{…}` declares the columns; each following indented line is a CSV row whose
+ * string fields are `"`-quoted with backslash escapes (\" \\ \n) and whose simple
+ * tokens/numbers are unquoted. We map each row positionally to the columns.
+ *
+ * Falls back to JSON parsing for any tool/mode that returns a JSON array.
  * @param {string} text
  * @returns {any[]}
  */
-function _extractArray(text) {
+function _extractRows(text) {
   if (!text || typeof text !== 'string') return [];
-  let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    return [];
-  }
-  if (Array.isArray(parsed)) return parsed;
-  if (parsed && typeof parsed === 'object') {
-    for (const key of ['results', 'data', 'posts', 'tweets', 'items', 'rows', 'records']) {
-      if (Array.isArray(parsed[key])) return parsed[key];
-    }
-    // Some xpoz modes nest under data.results etc.
-    if (parsed.data && typeof parsed.data === 'object') {
-      for (const key of ['results', 'posts', 'tweets', 'items']) {
-        if (Array.isArray(parsed.data[key])) return parsed.data[key];
+
+  // Fast path: some payloads may be JSON.
+  const trimmed = text.trim();
+  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed;
+      for (const k of ['results', 'data', 'posts', 'tweets', 'items', 'rows', 'records']) {
+        if (Array.isArray(parsed?.[k])) return parsed[k];
+        if (Array.isArray(parsed?.data?.[k])) return parsed.data[k];
       }
+    } catch { /* fall through to compact parser */ }
+  }
+
+  if (/^status:\s*error/im.test(text)) return [];
+  // xpoz uses TWO text shapes: compact `results[N]{cols}: csv` (scalar fields)
+  // and a YAML list `results[N]:` + `- key: value` blocks (when any field is an
+  // array, e.g. mediaUrls). Try both.
+  const compact = _parseXpozCompact(text);
+  if (compact.length) return compact;
+  return _parseXpozYamlList(text);
+}
+
+/** Parse the xpoz YAML-list shape (`results[N]:` then `- key: value` records). */
+function _parseXpozYamlList(text) {
+  const lines = text.split('\n');
+  const hi = lines.findIndex((l) => /^\s*results\[\d+\]\s*:\s*$/.test(l));
+  if (hi === -1) return [];
+  const baseIndent = lines[hi].length - lines[hi].trimStart().length;
+
+  const rows = [];
+  let cur = null;
+  for (let i = hi + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    const indent = line.length - line.trimStart().length;
+    const t = line.trim();
+    if (t.startsWith('- ')) {
+      if (cur) rows.push(cur);
+      cur = {};
+      _assignXpozKv(cur, t.slice(2));
+    } else if (cur && indent > baseIndent && /^[\w]+(\[\d+\])?\s*:/.test(t)) {
+      _assignXpozKv(cur, t);
+    } else if (indent <= baseIndent) {
+      break; // back to a sibling meta key (count:, guidance:) → records done
     }
   }
-  return [];
+  if (cur) rows.push(cur);
+  return rows;
+}
+
+/** Assign a `key: value` (or `key[N]: csv`) pair onto a record object. */
+function _assignXpozKv(obj, kv) {
+  const m = kv.match(/^([\w]+)(\[\d+\])?\s*:\s*(.*)$/);
+  if (!m) return;
+  const [, key, isArr, rawVal] = m;
+  if (isArr) {
+    obj[key] = _parseXpozCsvRow(rawVal).filter(Boolean);
+  } else {
+    const v = rawVal.trim();
+    obj[key] = v.startsWith('"') ? (_parseXpozCsvRow(v)[0] ?? '') : v;
+  }
+}
+
+/** Parse the xpoz compact `results[N]{cols}:` block into row objects. */
+function _parseXpozCompact(text) {
+  const lines = text.split('\n');
+  const headerIdx = lines.findIndex((l) => /results\[\d+\]\{[^}]*\}\s*:/.test(l));
+  if (headerIdx === -1) return [];
+  const cols = (lines[headerIdx].match(/\{([^}]*)\}/)?.[1] ?? '')
+    .split(',').map((c) => c.trim()).filter(Boolean);
+  if (!cols.length) return [];
+
+  const rows = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const raw = lines[i];
+    if (!raw.trim()) continue;
+    // A new top-level key (e.g. "guidance:" or another "results[") ends the block.
+    if (/^\S/.test(raw) && !raw.trim().startsWith('"')) break;
+    const fields = _parseXpozCsvRow(raw.trim());
+    if (!fields.length) continue;
+    const obj = {};
+    cols.forEach((c, idx) => { obj[c] = fields[idx] ?? ''; });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+/** Parse one CSV row with `"`-quoted fields and backslash escapes. */
+function _parseXpozCsvRow(line) {
+  const out = [];
+  let cur = '', inQ = false, quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '\\' && i + 1 < line.length) {
+        const n = line[++i];
+        cur += n === 'n' ? '\n' : n === 't' ? '\t' : n;
+      } else if (c === '"') {
+        inQ = false;
+      } else {
+        cur += c;
+      }
+    } else if (c === '"') {
+      inQ = true; quoted = true;
+    } else if (c === ',') {
+      out.push(quoted ? cur : cur.trim());
+      cur = ''; quoted = false;
+    } else {
+      cur += c;
+    }
+  }
+  out.push(quoted ? cur : cur.trim());
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -221,7 +327,10 @@ function _mapTiktok(r) {
 // Public collectors
 // ---------------------------------------------------------------------------
 
-const TWITTER_FIELDS = ['id', 'text', 'authorUsername', 'createdAtDate', 'likeCount', 'retweetCount', 'replyCount', 'lang', 'mediaUrls'];
+// Scalar-only fields → xpoz returns the compact CSV shape (avoids the YAML-list
+// shape that array fields like mediaUrls trigger). The YAML parser remains a
+// fallback, but keeping the request scalar makes the common path the tested one.
+const TWITTER_FIELDS = ['id', 'text', 'authorUsername', 'createdAtDate', 'likeCount', 'retweetCount', 'replyCount', 'lang'];
 
 /**
  * Fetch recent posts from one tracked author.
