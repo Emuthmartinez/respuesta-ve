@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { t } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n-server';
 import { LangToggle } from '@/components/LangToggle';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { MobileNav } from '@/components/MobileNav';
 
 export async function Header() {
   const locale = await getLocale();
@@ -21,14 +23,17 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-20 border-b border-black/10 bg-white/90 backdrop-blur dark:border-white/10 dark:bg-black/80">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
+        {/* Brand */}
+        <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
           <span className="inline-block h-3 w-3 rounded-full bg-red-600" />
           <span>{d.nav.brand}</span>
           <span className="hidden text-xs font-normal text-zinc-500 sm:inline">
             {d.nav.tagline}
           </span>
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
+
+        {/* Desktop nav — hidden on mobile */}
+        <nav className="hidden items-center gap-1 text-sm lg:flex">
           {NAV.map((n) => (
             <Link
               key={n.href}
@@ -39,7 +44,15 @@ export async function Header() {
             </Link>
           ))}
           <LangToggle locale={locale} />
+          <ThemeToggle />
         </nav>
+
+        {/* Mobile right side: toggles + hamburger */}
+        <div className="flex items-center gap-1 lg:hidden">
+          <LangToggle locale={locale} />
+          <ThemeToggle />
+          <MobileNav nav={NAV} />
+        </div>
       </div>
     </header>
   );

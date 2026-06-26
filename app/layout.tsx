@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { Disclaimer } from '@/components/Disclaimer';
 import { t } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n-server';
+import { LocaleProvider } from '@/lib/locale-context';
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://respuesta-ve.e-muth-martinez.workers.dev';
 const DESC =
@@ -61,21 +63,39 @@ const JSON_LD = {
   ],
 };
 
+// Inline script to apply dark/light class before first paint (prevents FOUC).
+// Reads the 'theme' cookie; falls back to OS preference when absent.
+const THEME_SCRIPT = `(function(){try{var c=document.cookie.match(/(?:^|;\\s*)theme=([^;]+)/);var t=c?c[1]:null;if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){}})();`;
+
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();
   const d = t(locale);
+
+  // Read theme cookie server-side so the initial HTML class matches the cookie.
+  const jar = await cookies();
+  const themeCookie = jar.get('theme')?.value;
+  const serverDark = themeCookie === 'dark' ? true : themeCookie === 'light' ? false : null;
+  // null means "unknown at SSR time" — let the inline script decide.
+  const htmlClass = `h-full antialiased${serverDark === true ? ' dark' : ''}`;
+
   return (
-    <html lang="es" className="h-full antialiased">
+    <html lang={locale} className={htmlClass}>
+      <head>
+        {/* Must be first in <head> so it runs before any CSS paint */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-100">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
-        <Header />
-        <main className="flex flex-1 flex-col">{children}</main>
-        <footer className="border-t border-black/10 px-4 py-6 text-xs text-zinc-500 dark:border-white/10">
-          <div className="mx-auto max-w-6xl space-y-3">
-            <Disclaimer locale={locale} />
-            <p className="text-center">{d.footer.text}</p>
-          </div>
-        </footer>
+        <LocaleProvider locale={locale}>
+          <Header />
+          <main className="flex flex-1 flex-col">{children}</main>
+          <footer className="border-t border-black/10 px-4 py-6 text-xs text-zinc-500 dark:border-white/10">
+            <div className="mx-auto max-w-6xl space-y-3">
+              <Disclaimer locale={locale} />
+              <p className="text-center">{d.footer.text}</p>
+            </div>
+          </footer>
+        </LocaleProvider>
       </body>
     </html>
   );

@@ -4,6 +4,69 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 import { PLACARD_OPTIONS, HAZARD_CATEGORIES, HAZARD_GRADES, DAMAGE_PCT } from '@/lib/responder';
+import { tr } from '@/lib/i18n';
+import { useLocale } from '@/lib/locale-context';
+
+const STR = {
+  es: {
+    verdict: 'Dictamen *',
+    assessmentType: 'Tipo de evaluación',
+    rapid: 'Rápida (exterior)',
+    detailed: 'Detallada (interior)',
+    scope: 'Alcance',
+    exteriorOnly: 'Solo exterior',
+    exteriorAndInterior: 'Exterior e interior',
+    hazards: 'Peligros observados',
+    damagePct: 'Daño estimado (%)',
+    detailedEval: 'Evaluación detallada',
+    notNeeded: 'No requerida',
+    recommended: 'Recomendada',
+    required: 'Requerida',
+    useRestrictions: 'Restricciones de uso',
+    useRestrictionsPlaceholder: 'Ej: prohibido el acceso al 3er piso',
+    barricade: 'Requiere barricada',
+    gasShutoff: 'Gas cerrado/confirmado',
+    license: 'N.º de licencia/CIV (para el cartel)',
+    structuralNotes: 'Notas estructurales',
+    disclaimerText:
+      'Confirmo que esta es una evaluación comunitaria de coordinación, no una certificación oficial, y que debe coordinarse con Protección Civil/Bomberos.',
+    disclaimerStrong: 'evaluación comunitaria de coordinación',
+    errNoVerdict: 'Selecciona un dictamen (verde/amarillo/rojo).',
+    errNoDisclaimer: 'Debes confirmar el aviso de evaluación comunitaria.',
+    errNoDb: 'La base de datos no está conectada.',
+    submitting: 'Enviando…',
+    submit: 'Emitir evaluación',
+  },
+  en: {
+    verdict: 'Verdict *',
+    assessmentType: 'Assessment type',
+    rapid: 'Rapid (exterior)',
+    detailed: 'Detailed (interior)',
+    scope: 'Scope',
+    exteriorOnly: 'Exterior only',
+    exteriorAndInterior: 'Exterior and interior',
+    hazards: 'Observed hazards',
+    damagePct: 'Estimated damage (%)',
+    detailedEval: 'Detailed evaluation',
+    notNeeded: 'Not needed',
+    recommended: 'Recommended',
+    required: 'Required',
+    useRestrictions: 'Use restrictions',
+    useRestrictionsPlaceholder: 'E.g.: no access to 3rd floor',
+    barricade: 'Requires barricade',
+    gasShutoff: 'Gas shut off/confirmed',
+    license: 'License/CIV no. (for the placard)',
+    structuralNotes: 'Structural notes',
+    disclaimerText:
+      'I confirm this is a community coordination assessment, not an official certification, and must be coordinated with Civil Protection/Fire Department.',
+    disclaimerStrong: 'community coordination assessment',
+    errNoVerdict: 'Select a verdict (green/yellow/red).',
+    errNoDisclaimer: 'You must confirm the community assessment notice.',
+    errNoDb: 'Database is not connected.',
+    submitting: 'Submitting…',
+    submit: 'Submit assessment',
+  },
+} as const;
 
 const field =
   'w-full rounded-md border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-zinc-900';
@@ -23,6 +86,8 @@ export function AssessmentForm({
   buildingId: string;
   requestId: string | null;
 }) {
+  const locale = useLocale();
+  const s = STR[locale];
   const router = useRouter();
   const [placard, setPlacard] = useState('');
   const [assessmentType, setAssessmentType] = useState('rapid');
@@ -43,16 +108,16 @@ export function AssessmentForm({
     e.preventDefault();
     setErr('');
     if (!placard) {
-      setErr('Selecciona un dictamen (verde/amarillo/rojo).');
+      setErr(s.errNoVerdict);
       return;
     }
     if (!disclaimer) {
-      setErr('Debes confirmar el aviso de evaluación comunitaria.');
+      setErr(s.errNoDisclaimer);
       return;
     }
     const sb = getSupabaseBrowser();
     if (!sb) {
-      setErr('La base de datos no está conectada.');
+      setErr(s.errNoDb);
       return;
     }
     setSaving(true);
@@ -91,7 +156,7 @@ export function AssessmentForm({
   return (
     <form onSubmit={onSubmit} className="mt-5 space-y-5">
       <div>
-        <label className="mb-1 block text-sm font-medium">Dictamen *</label>
+        <label className="mb-1 block text-sm font-medium">{s.verdict}</label>
         <div className="space-y-2">
           {PLACARD_OPTIONS.map((p) => (
             <button
@@ -103,7 +168,7 @@ export function AssessmentForm({
               }`}
             >
               <span className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: p.color }} />
-              {p.label}
+              {tr(p.label, locale)}
             </button>
           ))}
         </div>
@@ -111,33 +176,33 @@ export function AssessmentForm({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium">Tipo de evaluación</label>
+          <label className="mb-1 block text-sm font-medium">{s.assessmentType}</label>
           <select className={field} value={assessmentType} onChange={(e) => setAssessmentType(e.target.value)}>
-            <option value="rapid">Rápida (exterior)</option>
-            <option value="detailed">Detallada (interior)</option>
+            <option value="rapid">{s.rapid}</option>
+            <option value="detailed">{s.detailed}</option>
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">Alcance</label>
+          <label className="mb-1 block text-sm font-medium">{s.scope}</label>
           <select className={field} value={scope} onChange={(e) => setScope(e.target.value)}>
-            <option value="exterior_only">Solo exterior</option>
-            <option value="exterior_and_interior">Exterior e interior</option>
+            <option value="exterior_only">{s.exteriorOnly}</option>
+            <option value="exterior_and_interior">{s.exteriorAndInterior}</option>
           </select>
         </div>
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-medium">Peligros observados</label>
+        <label className="mb-2 block text-sm font-medium">{s.hazards}</label>
         <div className="space-y-2">
           {HAZARD_CATEGORIES.map((h) => (
             <div key={h.key} className="flex items-center justify-between gap-3">
-              <span className="text-sm">{h.label}</span>
+              <span className="text-sm">{tr(h.label, locale)}</span>
               <select
                 className="rounded-md border border-black/15 bg-white px-2 py-1 text-xs dark:border-white/15 dark:bg-zinc-900"
                 value={hazards[h.key] ?? 'none'}
                 onChange={(e) => setHazards((prev) => ({ ...prev, [h.key]: e.target.value }))}
               >
-                {HAZARD_GRADES.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+                {HAZARD_GRADES.map((g) => <option key={g.value} value={g.value}>{tr(g.label, locale)}</option>)}
               </select>
             </div>
           ))}
@@ -146,53 +211,56 @@ export function AssessmentForm({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium">Daño estimado (%)</label>
+          <label className="mb-1 block text-sm font-medium">{s.damagePct}</label>
           <select className={field} value={damagePct} onChange={(e) => setDamagePct(e.target.value)}>
             <option value="">—</option>
             {DAMAGE_PCT.map((d) => <option key={d} value={d}>{d}%</option>)}
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">Evaluación detallada</label>
+          <label className="mb-1 block text-sm font-medium">{s.detailedEval}</label>
           <select className={field} value={detailed} onChange={(e) => setDetailed(e.target.value)}>
-            <option value="not_needed">No requerida</option>
-            <option value="recommended">Recomendada</option>
-            <option value="required">Requerida</option>
+            <option value="not_needed">{s.notNeeded}</option>
+            <option value="recommended">{s.recommended}</option>
+            <option value="required">{s.required}</option>
           </select>
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Restricciones de uso</label>
-        <input className={field} value={useRestrictions} onChange={(e) => setUseRestrictions(e.target.value)} placeholder="Ej: prohibido el acceso al 3er piso" />
+        <label className="mb-1 block text-sm font-medium">{s.useRestrictions}</label>
+        <input className={field} value={useRestrictions} onChange={(e) => setUseRestrictions(e.target.value)} placeholder={s.useRestrictionsPlaceholder} />
       </div>
 
       <div className="flex flex-wrap gap-4 text-sm">
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={barricade} onChange={(e) => setBarricade(e.target.checked)} />
-          Requiere barricada
+          {s.barricade}
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={gasShutoff} onChange={(e) => setGasShutoff(e.target.checked)} />
-          Gas cerrado/confirmado
+          {s.gasShutoff}
         </label>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">N.º de licencia/CIV (para el cartel)</label>
+        <label className="mb-1 block text-sm font-medium">{s.license}</label>
         <input className={field} value={license} onChange={(e) => setLicense(e.target.value)} />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Notas estructurales</label>
+        <label className="mb-1 block text-sm font-medium">{s.structuralNotes}</label>
         <textarea className={field} rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
 
       <label className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
         <input type="checkbox" className="mt-0.5" checked={disclaimer} onChange={(e) => setDisclaimer(e.target.checked)} />
         <span>
-          Confirmo que esta es una <strong>evaluación comunitaria de coordinación</strong>,
-          no una certificación oficial, y que debe coordinarse con Protección Civil/Bomberos.
+          {locale === 'es' ? (
+            <>Confirmo que esta es una <strong>evaluación comunitaria de coordinación</strong>, no una certificación oficial, y que debe coordinarse con Protección Civil/Bomberos.</>
+          ) : (
+            <>I confirm this is a <strong>community coordination assessment</strong>, not an official certification, and must be coordinated with Civil Protection/Fire Department.</>
+          )}
         </span>
       </label>
 
@@ -202,7 +270,7 @@ export function AssessmentForm({
         disabled={saving || !disclaimer}
         className="w-full rounded-full bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
       >
-        {saving ? 'Enviando…' : 'Emitir evaluación'}
+        {saving ? s.submitting : s.submit}
       </button>
     </form>
   );

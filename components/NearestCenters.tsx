@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { haversineKm, COUNTRY_NAME } from '@/lib/geo';
-import { DONATION_ITEM_LABEL } from '@/lib/orgs';
+import { donationItemLabel } from '@/lib/orgs';
+import { useLocale } from '@/lib/locale-context';
 import type { CenterPublic } from '@/lib/orgs';
 
 type GeoState =
@@ -14,6 +15,51 @@ type GeoState =
 
 const ALL_COUNTRIES = 'all';
 
+const STR = {
+  es: {
+    requesting: 'Obteniendo tu ubicación…',
+    sorted_by_distance: 'Ordenados por distancia a ti',
+    filter_by_country: 'Filtrar por país:',
+    all_countries: 'Todos los países',
+    no_centers_in: (place: string) => `No hay centros en ${place}.`,
+    no_countries: 'ningún país',
+    what_needed: 'Qué se necesita',
+    contact_prefix: 'Contacto:',
+    donate_money: 'Donar dinero →',
+    empty_state: 'Aún no hay centros de acopio publicados.',
+    empty_add: '¿Conoces uno? Agrégalo aquí',
+    empty_verify: '— lo verificamos antes de publicarlo.',
+    footer_prompt: '¿Conoces un centro que no aparece?',
+    footer_add: 'Agrégalo aquí',
+    footer_note:
+      'Los centros se verifican antes de publicarse. Las coordenadas se muestran con imprecisión intencional para proteger la privacidad.',
+    geo_denied_no_perms: 'Permiso de ubicación denegado.',
+    geo_denied_other: 'No se pudo obtener tu ubicación.',
+    geo_no_support: 'Tu navegador no soporta geolocalización.',
+  },
+  en: {
+    requesting: 'Getting your location…',
+    sorted_by_distance: 'Sorted by distance from you',
+    filter_by_country: 'Filter by country:',
+    all_countries: 'All countries',
+    no_centers_in: (place: string) => `No collection centers in ${place}.`,
+    no_countries: 'any country',
+    what_needed: "What's needed",
+    contact_prefix: 'Contact:',
+    donate_money: 'Donate money →',
+    empty_state: 'No collection centers published yet.',
+    empty_add: 'Know one? Add it here',
+    empty_verify: '— we verify before publishing.',
+    footer_prompt: "Know a center that's not listed?",
+    footer_add: 'Add it here',
+    footer_note:
+      'Centers are verified before being published. Coordinates are intentionally imprecise to protect privacy.',
+    geo_denied_no_perms: 'Location permission denied.',
+    geo_denied_other: 'Could not get your location.',
+    geo_no_support: 'Your browser does not support geolocation.',
+  },
+} as const;
+
 function distanceLabel(km: number): string {
   if (km < 1) return `${Math.round(km * 1000)} m`;
   if (km < 10) return `${km.toFixed(1)} km`;
@@ -21,12 +67,15 @@ function distanceLabel(km: number): string {
 }
 
 export default function NearestCenters({ centers }: { centers: CenterPublic[] }) {
+  const locale = useLocale();
+  const s = STR[locale];
+
   const [geo, setGeo] = useState<GeoState>({ phase: 'idle' });
   const [countryFilter, setCountryFilter] = useState<string>(ALL_COUNTRIES);
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setGeo({ phase: 'denied', reason: 'Tu navegador no soporta geolocalización.' });
+      setGeo({ phase: 'denied', reason: s.geo_no_support });
       return;
     }
     setGeo({ phase: 'requesting' });
@@ -35,10 +84,11 @@ export default function NearestCenters({ centers }: { centers: CenterPublic[] })
       (err) =>
         setGeo({
           phase: 'denied',
-          reason: err.code === 1 ? 'Permiso de ubicación denegado.' : 'No se pudo obtener tu ubicación.',
+          reason: err.code === 1 ? s.geo_denied_no_perms : s.geo_denied_other,
         }),
       { timeout: 8000, maximumAge: 300_000 },
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const countries = useMemo(() => {
@@ -64,11 +114,11 @@ export default function NearestCenters({ centers }: { centers: CenterPublic[] })
   if (centers.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-black/15 p-5 text-sm text-zinc-600 dark:border-white/15 dark:text-zinc-400">
-        Aún no hay centros de acopio publicados.{' '}
+        {s.empty_state}{' '}
         <Link href="/afuera/agregar-centro" className="font-medium text-amber-600 hover:underline">
-          ¿Conoces uno? Agrégalo aquí
+          {s.empty_add}
         </Link>{' '}
-        — lo verificamos antes de publicarlo.
+        {s.empty_verify}
       </div>
     );
   }
@@ -76,14 +126,14 @@ export default function NearestCenters({ centers }: { centers: CenterPublic[] })
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-        {geo.phase === 'requesting' && <span className="animate-pulse">Obteniendo tu ubicación…</span>}
-        {geo.phase === 'granted' && <span className="text-green-600 dark:text-green-400">Ordenados por distancia a ti</span>}
+        {geo.phase === 'requesting' && <span className="animate-pulse">{s.requesting}</span>}
+        {geo.phase === 'granted' && <span className="text-green-600 dark:text-green-400">{s.sorted_by_distance}</span>}
         {(geo.phase === 'denied' || geo.phase === 'idle') && (
           <>
-            <span>{geo.phase === 'denied' ? geo.reason : ''} Filtrar por país:</span>
+            <span>{geo.phase === 'denied' ? geo.reason : ''} {s.filter_by_country}</span>
             <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)}
               className="rounded border border-black/15 bg-transparent px-2 py-0.5 text-xs dark:border-white/20">
-              <option value={ALL_COUNTRIES}>Todos los países</option>
+              <option value={ALL_COUNTRIES}>{s.all_countries}</option>
               {countries.map((cc) => <option key={cc} value={cc}>{COUNTRY_NAME[cc] ?? cc}</option>)}
             </select>
           </>
@@ -92,7 +142,11 @@ export default function NearestCenters({ centers }: { centers: CenterPublic[] })
 
       {sorted.length === 0 ? (
         <p className="text-sm text-zinc-500">
-          No hay centros en {countryFilter === ALL_COUNTRIES ? 'ningún país' : (COUNTRY_NAME[countryFilter] ?? countryFilter)}.
+          {s.no_centers_in(
+            countryFilter === ALL_COUNTRIES
+              ? s.no_countries
+              : (COUNTRY_NAME[countryFilter] ?? countryFilter)
+          )}
         </p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -113,24 +167,24 @@ export default function NearestCenters({ centers }: { centers: CenterPublic[] })
                 </div>
                 {c.priority_items && c.priority_items.length > 0 && (
                   <div className="mt-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Qué se necesita</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">{s.what_needed}</span>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {c.priority_items.map((it) => (
                         <span key={it} className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
-                          {DONATION_ITEM_LABEL[it] ?? it}
+                          {donationItemLabel(it, locale)}
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
                 {c.needs_notes && <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{c.needs_notes}</p>}
-                {c.contact_public_display && <p className="mt-1 text-xs text-zinc-500">Contacto: {c.contact_public_display}</p>}
+                {c.contact_public_display && <p className="mt-1 text-xs text-zinc-500">{s.contact_prefix} {c.contact_public_display}</p>}
                 {c.hours_notes && <p className="text-xs text-zinc-500">{c.hours_notes}</p>}
                 {c.accepts_monetary && c.monetary_url && (
                   <div className="mt-3">
                     <a href={c.monetary_url} target="_blank" rel="noreferrer"
                       className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700">
-                      Donar dinero →
+                      {s.donate_money}
                     </a>
                   </div>
                 )}
@@ -141,9 +195,9 @@ export default function NearestCenters({ centers }: { centers: CenterPublic[] })
       )}
 
       <p className="mt-3 text-xs text-zinc-400">
-        ¿Conoces un centro que no aparece?{' '}
-        <Link href="/afuera/agregar-centro" className="font-medium text-amber-600 hover:underline">Agrégalo aquí</Link>.
-        Los centros se verifican antes de publicarse. Las coordenadas se muestran con imprecisión intencional para proteger la privacidad.
+        {s.footer_prompt}{' '}
+        <Link href="/afuera/agregar-centro" className="font-medium text-amber-600 hover:underline">{s.footer_add}</Link>.{' '}
+        {s.footer_note}
       </p>
     </div>
   );

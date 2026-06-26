@@ -1,12 +1,30 @@
 import Link from 'next/link';
 import { createHash } from 'node:crypto';
 import { getSupabaseServer } from '@/lib/supabase/server';
-import { REQUEST_STATUS_ES } from '@/lib/skills';
+import { requestStatusSkills } from '@/lib/skills';
+import { getLocale } from '@/lib/i18n-server';
 
 export const dynamic = 'force-dynamic';
 
+const STR = {
+  es: {
+    heading: 'Estado de tu solicitud',
+    not_found: 'No encontramos una solicitud con este código.',
+    hint: 'Guarda este enlace para volver a consultar. Un coordinador te conectará con un voluntario verificado de forma privada.',
+    back: 'Volver al intercambio',
+  },
+  en: {
+    heading: 'Your request status',
+    not_found: 'We could not find a request with this code.',
+    hint: 'Save this link to check again later. A coordinator will connect you with a verified volunteer privately.',
+    back: 'Back to the exchange',
+  },
+} as const;
+
 export default async function AyudaStatusPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  const locale = await getLocale();
+  const s = STR[locale];
   const tokenHash = createHash('sha256').update(token).digest('hex');
 
   let status: string | null = null;
@@ -18,20 +36,19 @@ export default async function AyudaStatusPage({ params }: { params: Promise<{ to
 
   return (
     <div className="mx-auto max-w-md px-4 py-16 text-center">
-      <h1 className="text-2xl font-bold">Estado de tu solicitud</h1>
+      <h1 className="text-2xl font-bold">{s.heading}</h1>
       {status ? (
         <p className="mt-3 rounded-lg border border-black/10 px-4 py-3 text-sm dark:border-white/10">
-          {REQUEST_STATUS_ES[status] ?? status}
+          {requestStatusSkills(status, locale)}
         </p>
       ) : (
-        <p className="mt-3 text-sm text-zinc-500">No encontramos una solicitud con este código.</p>
+        <p className="mt-3 text-sm text-zinc-500">{s.not_found}</p>
       )}
       <p className="mt-4 text-xs text-zinc-500">
-        Guarda este enlace para volver a consultar. Un coordinador te conectará con
-        un voluntario verificado de forma privada.
+        {s.hint}
       </p>
       <Link href="/intercambio" className="mt-6 inline-block text-sm text-red-600 underline">
-        Volver al intercambio
+        {s.back}
       </Link>
     </div>
   );

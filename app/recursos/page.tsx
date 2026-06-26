@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import type { OrgPublic } from '@/lib/orgs';
 import { EMERGENCY_NUMBERS } from '@/lib/safety-copy';
-import { t } from '@/lib/i18n';
+import { t, tr } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n-server';
 
 export const metadata: Metadata = { title: 'Recursos — Respuesta VE' };
@@ -56,7 +56,7 @@ export default async function RecursosPage() {
             <a key={n.label} href={`tel:${n.tel}`}
               className="rounded-lg border border-black/10 p-3 text-center hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5">
               <div className="text-xl font-bold">{n.label}</div>
-              <div className="text-xs text-zinc-500">{n.note}</div>
+              <div className="text-xs text-zinc-500">{tr(n.note, locale)}</div>
             </a>
           ))}
         </div>

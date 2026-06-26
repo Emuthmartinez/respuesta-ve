@@ -3,6 +3,29 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 import { DAMAGE_BY_VALUE, type DamageLevel } from '@/lib/taxonomy';
+import { tr } from '@/lib/i18n';
+import { useLocale } from '@/lib/locale-context';
+
+const STR = {
+  es: {
+    loading: 'Cargando reportes…',
+    empty: 'No hay reportes pendientes. 🎉',
+    noLocation: 'Sin ubicación',
+    approve: 'Aprobar',
+    rejectSpam: 'Rechazar (spam)',
+    rejectAbuse: 'Rechazar (abuso)',
+    errNoPermission: 'Sin permiso de coordinador.',
+  },
+  en: {
+    loading: 'Loading reports…',
+    empty: 'No pending reports. 🎉',
+    noLocation: 'No location',
+    approve: 'Approve',
+    rejectSpam: 'Reject (spam)',
+    rejectAbuse: 'Reject (abuse)',
+    errNoPermission: 'Coordinator access required.',
+  },
+} as const;
 
 interface PendingBuilding {
   id: string;
@@ -16,6 +39,8 @@ interface PendingBuilding {
 }
 
 export function ModerationList() {
+  const locale = useLocale();
+  const s = STR[locale];
   const [rows, setRows] = useState<PendingBuilding[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
@@ -49,17 +74,17 @@ export function ModerationList() {
       setMsg(error.message);
       return;
     }
-    if (data === false) setMsg('Sin permiso de coordinador.');
+    if (data === false) setMsg(s.errNoPermission);
     await load();
   }
 
-  if (loading) return <p className="text-sm text-zinc-500">Cargando reportes…</p>;
+  if (loading) return <p className="text-sm text-zinc-500">{s.loading}</p>;
 
   return (
     <div className="space-y-3">
       {msg && <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">{msg}</p>}
       {rows.length === 0 ? (
-        <p className="text-sm text-zinc-500">No hay reportes pendientes. 🎉</p>
+        <p className="text-sm text-zinc-500">{s.empty}</p>
       ) : (
         rows.map((b) => (
           <div key={b.id} className="rounded-lg border border-black/10 p-4 dark:border-white/10">
@@ -68,23 +93,25 @@ export function ModerationList() {
                 className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
                 style={{ backgroundColor: DAMAGE_BY_VALUE[b.damage_level as DamageLevel]?.color ?? '#777' }}
               >
-                {DAMAGE_BY_VALUE[b.damage_level as DamageLevel]?.label ?? b.damage_level}
+                {tr(DAMAGE_BY_VALUE[b.damage_level as DamageLevel]?.label ?? { es: b.damage_level, en: b.damage_level }, locale)}
               </span>
-              <span className="text-xs text-zinc-500">{new Date(b.created_at).toLocaleString('es-VE')}</span>
+              <span className="text-xs text-zinc-500">
+                {new Date(b.created_at).toLocaleString(locale === 'en' ? 'en-US' : 'es-VE')}
+              </span>
             </div>
             <div className="mt-2 text-xs text-zinc-500">
-              {[b.address, b.municipio, b.estado].filter(Boolean).join(', ') || 'Sin ubicación'}
+              {[b.address, b.municipio, b.estado].filter(Boolean).join(', ') || s.noLocation}
             </div>
             {b.description && <p className="mt-1 text-sm">{b.description}</p>}
             <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={() => moderate(b.id, 'approved')} className="rounded-full bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-700">
-                Aprobar
+                {s.approve}
               </button>
               <button onClick={() => moderate(b.id, 'rejected_spam')} className="rounded-full border border-black/15 px-4 py-1.5 text-xs dark:border-white/20">
-                Rechazar (spam)
+                {s.rejectSpam}
               </button>
               <button onClick={() => moderate(b.id, 'rejected_abusive')} className="rounded-full border border-black/15 px-4 py-1.5 text-xs dark:border-white/20">
-                Rechazar (abuso)
+                {s.rejectAbuse}
               </button>
             </div>
           </div>

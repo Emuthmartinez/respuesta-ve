@@ -4,10 +4,24 @@ import type { Metadata } from 'next';
 import { getResponderProfile, isActiveVerified } from '@/lib/auth';
 import { InspectionQueue } from '@/components/voluntarios/InspectionQueue';
 import { Disclaimer } from '@/components/Disclaimer';
+import { getLocale } from '@/lib/i18n-server';
 
 export const metadata: Metadata = { title: 'Cola de inspección — Respuesta VE' };
 
+const STR = {
+  es: {
+    heading: 'Cola de inspección',
+    myProfile: 'Mi perfil',
+  },
+  en: {
+    heading: 'Inspection queue',
+    myProfile: 'My profile',
+  },
+} as const;
+
 export default async function ColaPage() {
+  const locale = await getLocale();
+  const s = STR[locale];
   const { user, responder } = await getResponderProfile();
   if (!user) redirect('/voluntarios/acceder');
   if (!responder || !isActiveVerified(responder)) redirect('/voluntarios');
@@ -17,9 +31,9 @@ export default async function ColaPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="mb-2 flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Cola de inspección</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{s.heading}</h1>
         <Link href="/voluntarios" className="text-xs text-zinc-500 underline">
-          Mi perfil
+          {s.myProfile}
         </Link>
       </div>
       <Disclaimer className="mb-4" />

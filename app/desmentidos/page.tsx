@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getSupabaseServer } from '@/lib/supabase/server';
+import { getLocale } from '@/lib/i18n-server';
+import type { Locale } from '@/lib/i18n';
 
 export const metadata: Metadata = {
   title: 'Información Falsa — Respuesta VE',
@@ -21,26 +23,67 @@ interface MisinfoRow {
   created_at: string;
 }
 
+// ---- page strings ---------------------------------------------------
+
+const STR = {
+  es: {
+    heading: 'Información falsa',
+    subtext_pre: 'Videos, fotos y noticias relacionadas con el terremoto que han sido verificados como',
+    subtext_strong: 'falsos, engañosos o sacados de contexto',
+    subtext_post: '. No los compartas.',
+    disclaimer_strong: 'Aviso:',
+    disclaimer_body:
+      'los contenidos listados aquí han sido reportados como FALSOS o engañosos. Se muestran únicamente para que puedas reconocerlos y no los difundas. Si crees que algo fue clasificado por error,',
+    disclaimer_link: 'contacta a un coordinador',
+    showing_200: 'Mostrando los 200 reportes más recientes.',
+    empty_no_reports: 'No hay reportes verificados por el momento.',
+    empty_db_error: 'No se pudo conectar con la base de datos. Inténtalo más tarde.',
+    source_label: 'Fuente original →',
+    debunk_label: 'Ver verificación →',
+    footer:
+      'Los reportes son revisados por coordinadores antes de publicarse. La plataforma no almacena ni comparte datos personales de quienes detectan contenido falso.',
+    back: 'Volver al mapa',
+  },
+  en: {
+    heading: 'False information',
+    subtext_pre: 'Videos, photos and news related to the earthquake that have been verified as',
+    subtext_strong: 'false, misleading, or taken out of context',
+    subtext_post: '. Do not share them.',
+    disclaimer_strong: 'Notice:',
+    disclaimer_body:
+      'The content listed here has been reported as FALSE or misleading. It is shown only so you can recognize it and avoid spreading it. If you believe something was misclassified,',
+    disclaimer_link: 'contact a coordinator',
+    showing_200: 'Showing the 200 most recent reports.',
+    empty_no_reports: 'No verified reports at the moment.',
+    empty_db_error: 'Could not connect to the database. Please try again later.',
+    source_label: 'Original source →',
+    debunk_label: 'View fact-check →',
+    footer:
+      'Reports are reviewed by coordinators before being published. The platform does not store or share personal data of those who detect false content.',
+    back: 'Back to the map',
+  },
+} as const;
+
 // ---- badge helpers --------------------------------------------------
 
-const VERDICT_LABELS: Record<MisinfoRow['verdict'], string> = {
-  false:       'FALSO',
-  misleading:  'ENGAÑOSO',
-  unverified:  'NO VERIFICADO',
-  satire:      'SÁTIRA',
+const VERDICT_LABELS: Record<MisinfoRow['verdict'], { es: string; en: string }> = {
+  false:      { es: 'FALSO',        en: 'FALSE' },
+  misleading: { es: 'ENGAÑOSO',     en: 'MISLEADING' },
+  unverified: { es: 'NO VERIFICADO', en: 'UNVERIFIED' },
+  satire:     { es: 'SÁTIRA',       en: 'SATIRE' },
 };
 
 const VERDICT_COLORS: Record<MisinfoRow['verdict'], string> = {
-  false:       'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-  misleading:  'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-  unverified:  'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
-  satire:      'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  false:      'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  misleading: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+  unverified: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
+  satire:     'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
 };
 
-const SEVERITY_LABELS: Record<MisinfoRow['severity'], string> = {
-  high:   'Alto impacto',
-  medium: 'Impacto medio',
-  low:    'Bajo impacto',
+const SEVERITY_LABELS: Record<MisinfoRow['severity'], { es: string; en: string }> = {
+  high:   { es: 'Alto impacto',  en: 'High impact' },
+  medium: { es: 'Impacto medio', en: 'Medium impact' },
+  low:    { es: 'Bajo impacto',  en: 'Low impact' },
 };
 
 const SEVERITY_DOT: Record<MisinfoRow['severity'], string> = {
@@ -60,9 +103,9 @@ function shortUrl(url: string, max = 60): string {
   }
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: Locale): string {
   try {
-    return new Intl.DateTimeFormat('es-VE', {
+    return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'es-VE', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -76,6 +119,9 @@ function formatDate(iso: string): string {
 // ---- page -----------------------------------------------------------
 
 export default async function DesmentidosPage() {
+  const locale = await getLocale();
+  const s = STR[locale];
+
   const sb = await getSupabaseServer();
   let rows: MisinfoRow[] = [];
 
@@ -91,21 +137,17 @@ export default async function DesmentidosPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       {/* heading */}
-      <h1 className="text-2xl font-bold tracking-tight">Información falsa</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{s.heading}</h1>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        Videos, fotos y noticias relacionadas con el terremoto que han sido
-        verificados como <strong>falsos, engañosos o sacados de contexto</strong>.
-        No los compartas.
+        {s.subtext_pre}{' '}
+        <strong>{s.subtext_strong}</strong>{s.subtext_post}
       </p>
 
       {/* disclaimer banner */}
       <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-        <strong>Aviso:</strong> los contenidos listados aquí han sido reportados
-        como FALSOS o engañosos. Se muestran únicamente para que puedas
-        reconocerlos y no los difundas. Si crees que algo fue clasificado por
-        error,{' '}
+        <strong>{s.disclaimer_strong}</strong> {s.disclaimer_body}{' '}
         <Link href="/recursos" className="underline underline-offset-2 hover:no-underline">
-          contacta a un coordinador
+          {s.disclaimer_link}
         </Link>
         .
       </div>
@@ -113,15 +155,13 @@ export default async function DesmentidosPage() {
       {/* list */}
       {rows.length === 0 ? (
         <div className="mt-8 rounded-lg border border-dashed border-black/15 p-6 text-center text-sm text-zinc-500 dark:border-white/15">
-          {sb
-            ? 'No hay reportes verificados por el momento.'
-            : 'No se pudo conectar con la base de datos. Inténtalo más tarde.'}
+          {sb ? s.empty_no_reports : s.empty_db_error}
         </div>
       ) : (
         <>
         {rows.length === 200 && (
           <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
-            Mostrando los 200 reportes más recientes.
+            {s.showing_200}
           </p>
         )}
         <ul className="mt-6 space-y-4">
@@ -135,14 +175,14 @@ export default async function DesmentidosPage() {
                 <span
                   className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide ${VERDICT_COLORS[r.verdict]}`}
                 >
-                  {VERDICT_LABELS[r.verdict]}
+                  {VERDICT_LABELS[r.verdict][locale]}
                 </span>
 
                 <span className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
                   <span
                     className={`inline-block h-1.5 w-1.5 rounded-full ${SEVERITY_DOT[r.severity]}`}
                   />
-                  {SEVERITY_LABELS[r.severity]}
+                  {SEVERITY_LABELS[r.severity][locale]}
                 </span>
 
                 {r.related_place && (
@@ -152,7 +192,7 @@ export default async function DesmentidosPage() {
                 )}
 
                 <span className="ml-auto text-xs text-zinc-400 dark:text-zinc-500">
-                  {formatDate(r.created_at)}
+                  {formatDate(r.created_at, locale)}
                 </span>
               </div>
 
@@ -173,7 +213,7 @@ export default async function DesmentidosPage() {
                   className="text-zinc-500 hover:underline dark:text-zinc-400"
                   title={r.source_url}
                 >
-                  Fuente original →{' '}
+                  {s.source_label}{' '}
                   <span className="font-mono">{shortUrl(r.source_url)}</span>
                 </a>
 
@@ -185,7 +225,7 @@ export default async function DesmentidosPage() {
                     className="font-medium text-green-700 hover:underline dark:text-green-400"
                     title={r.debunk_url}
                   >
-                    Ver verificación →
+                    {s.debunk_label}
                   </a>
                 )}
               </div>
@@ -197,11 +237,9 @@ export default async function DesmentidosPage() {
 
       {/* footer note */}
       <p className="mt-8 text-xs text-zinc-500">
-        Los reportes son revisados por coordinadores antes de publicarse. La
-        plataforma no almacena ni comparte datos personales de quienes detectan
-        contenido falso.{' '}
+        {s.footer}{' '}
         <Link href="/" className="text-zinc-400 hover:underline">
-          Volver al mapa
+          {s.back}
         </Link>
         .
       </p>

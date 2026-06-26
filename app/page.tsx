@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { DamageMap } from '@/components/DamageMap';
 import { LocationGate } from '@/components/LocationGate';
 import { Principles } from '@/components/Principles';
 import { t } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n-server';
+import { HomeMapSection } from '@/components/HomeMapSection';
 
 export default async function Home() {
   const locale = await getLocale();
@@ -39,11 +39,8 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="mx-auto mt-4 w-full max-w-6xl px-4 pb-4">
-        <div className="h-[70vh] overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
-          <DamageMap />
-        </div>
-      </section>
+      {/* Map section — list by default, full map on demand */}
+      <HomeMapSection locale={locale} />
 
       <Principles locale={locale} />
     </div>

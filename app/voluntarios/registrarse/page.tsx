@@ -2,14 +2,90 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 import { CREDENTIAL_TYPES, ESTADOS } from '@/lib/responder';
 import { Disclaimer } from '@/components/Disclaimer';
+import { useLocale } from '@/lib/locale-context';
+import { tr } from '@/lib/i18n';
 
 const field =
   'w-full rounded-md border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-zinc-900';
 
+const STR = {
+  es: {
+    loading: 'Cargando…',
+    heading: 'Registro de responder',
+    desc: 'Tu cuenta queda en revisión. Un coordinador verifica tus credenciales (p. ej. número CIV) antes de darte acceso a ubicaciones precisas y a la cola de inspección.',
+    descStrong: 'en revisión',
+    fullName: 'Nombre completo',
+    nationalId: 'Cédula de identidad',
+    nationalIdPlaceholder: 'V-12345678',
+    credentialType: 'Tipo de credencial',
+    credentialNumber: 'Número de credencial (CIV u otro)',
+    issuingBody: 'Ente emisor',
+    issuingBodyPlaceholder: 'CIV, Bomberos, Protección Civil…',
+    organization: 'Organización',
+    phone: 'Teléfono',
+    phonePlaceholder: '+58…',
+    whatsapp: 'WhatsApp',
+    currentEstado: 'Estado actual',
+    selectEstado: 'Seleccionar…',
+    specialty: 'Especialidad (separar por comas)',
+    specialtyPlaceholder: 'estructural, geotécnico',
+    operatingEstados: 'Estados donde puedes operar',
+    credentialPhoto: 'Credencial (foto) *',
+    selfie: 'Selfie con la credencial',
+    selfieHint: 'Rostro + credencial + fecha escrita a mano. Reduce suplantación.',
+    activationCode: 'Código de activación (si tienes uno)',
+    activationCodePlaceholder: 'Emitido por coordinadores de brigada',
+    missingCredential: 'Sube una foto de tu credencial profesional.',
+    invalidSession: 'Sesión no válida. Vuelve a acceder.',
+    saveFailed: 'No se pudo guardar el registro.',
+    sending: 'Enviando…',
+    submit: 'Enviar registro',
+    noCredentialPre: '¿No tienes credenciales profesionales? ',
+    noCredentialLink: 'Ofrece otra ayuda sin credenciales →',
+  },
+  en: {
+    loading: 'Loading…',
+    heading: 'Responder registration',
+    desc: 'Your account will be under review. A coordinator verifies your credentials (e.g. CIV number) before granting access to precise locations and the inspection queue.',
+    descStrong: 'under review',
+    fullName: 'Full name',
+    nationalId: 'National ID',
+    nationalIdPlaceholder: 'V-12345678',
+    credentialType: 'Credential type',
+    credentialNumber: 'License/CIV no.',
+    issuingBody: 'Issuing body',
+    issuingBodyPlaceholder: 'CIV, Fire Dept, Civil Protection…',
+    organization: 'Organization',
+    phone: 'Phone',
+    phonePlaceholder: '+58…',
+    whatsapp: 'WhatsApp',
+    currentEstado: 'Current state',
+    selectEstado: 'Select…',
+    specialty: 'Specialty (comma-separated)',
+    specialtyPlaceholder: 'structural, geotechnical',
+    operatingEstados: 'States where you can operate',
+    credentialPhoto: 'Credential photo *',
+    selfie: 'Selfie with credential',
+    selfieHint: 'Face + credential + handwritten date. Reduces impersonation.',
+    activationCode: 'Activation code (if you have one)',
+    activationCodePlaceholder: 'Issued by brigade coordinators',
+    missingCredential: 'Please upload a photo of your professional credential.',
+    invalidSession: 'Invalid session. Please sign in again.',
+    saveFailed: 'Could not save the registration.',
+    sending: 'Submitting…',
+    submit: 'Submit registration',
+    noCredentialPre: "Don't have professional credentials? ",
+    noCredentialLink: 'Offer other help without credentials →',
+  },
+} as const;
+
 export default function RegistrarsePage() {
+  const locale = useLocale();
+  const s = STR[locale];
   const router = useRouter();
   const [uid, setUid] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
@@ -64,12 +140,12 @@ export default function RegistrarsePage() {
     e.preventDefault();
     setErr('');
     if (!credFile) {
-      setErr('Sube una foto de tu credencial profesional.');
+      setErr(s.missingCredential);
       return;
     }
     const sb = getSupabaseBrowser();
     if (!sb || !uid) {
-      setErr('Sesión no válida. Vuelve a acceder.');
+      setErr(s.invalidSession);
       return;
     }
     setSaving(true);
@@ -98,88 +174,97 @@ export default function RegistrarsePage() {
       router.push('/voluntarios');
       router.refresh();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'No se pudo guardar el registro.');
+      setErr(e instanceof Error ? e.message : s.saveFailed);
     } finally {
       setSaving(false);
     }
   }
 
   if (checking) {
-    return <div className="mx-auto max-w-md px-4 py-16 text-center text-sm text-zinc-500">Cargando…</div>;
+    return <div className="mx-auto max-w-md px-4 py-16 text-center text-sm text-zinc-500">{s.loading}</div>;
   }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold tracking-tight">Registro de responder</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{s.heading}</h1>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        Tu cuenta queda <strong>en revisión</strong>. Un coordinador verifica tus
-        credenciales (p. ej. número CIV) antes de darte acceso a ubicaciones
-        precisas y a la cola de inspección.
+        {locale === 'es' ? (
+          <>Tu cuenta queda <strong>en revisión</strong>. Un coordinador verifica tus credenciales (p. ej. número CIV) antes de darte acceso a ubicaciones precisas y a la cola de inspección.</>
+        ) : (
+          <>Your account will be <strong>under review</strong>. A coordinator verifies your credentials (e.g. CIV number) before granting access to precise locations and the inspection queue.</>
+        )}
       </p>
       <Disclaimer className="mt-3" />
+
+      <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+        {s.noCredentialPre}
+        <Link href="/intercambio/ofrecer" className="font-medium text-red-600 hover:underline">
+          {s.noCredentialLink}
+        </Link>
+      </p>
 
       <form onSubmit={onSubmit} className="mt-5 space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium">Nombre completo</label>
+            <label className="mb-1 block text-sm font-medium">{s.fullName}</label>
             <input className={field} required value={fullName} onChange={(e) => setFullName(e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Cédula de identidad</label>
-            <input className={field} value={cedula} onChange={(e) => setCedula(e.target.value)} placeholder="V-12345678" />
+            <label className="mb-1 block text-sm font-medium">{s.nationalId}</label>
+            <input className={field} value={cedula} onChange={(e) => setCedula(e.target.value)} placeholder={s.nationalIdPlaceholder} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Tipo de credencial</label>
+            <label className="mb-1 block text-sm font-medium">{s.credentialType}</label>
             <select className={field} value={credentialType} onChange={(e) => setCredentialType(e.target.value)}>
-              {CREDENTIAL_TYPES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              {CREDENTIAL_TYPES.map((c) => <option key={c.value} value={c.value}>{tr(c.label, locale)}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Número de credencial (CIV u otro)</label>
+            <label className="mb-1 block text-sm font-medium">{s.credentialNumber}</label>
             <input className={field} value={credentialNumber} onChange={(e) => setCredentialNumber(e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Ente emisor</label>
-            <input className={field} value={issuingBody} onChange={(e) => setIssuingBody(e.target.value)} placeholder="CIV, Bomberos, Protección Civil…" />
+            <label className="mb-1 block text-sm font-medium">{s.issuingBody}</label>
+            <input className={field} value={issuingBody} onChange={(e) => setIssuingBody(e.target.value)} placeholder={s.issuingBodyPlaceholder} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Organización</label>
+            <label className="mb-1 block text-sm font-medium">{s.organization}</label>
             <input className={field} value={organization} onChange={(e) => setOrganization(e.target.value)} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Teléfono</label>
-            <input className={field} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+58…" />
+            <label className="mb-1 block text-sm font-medium">{s.phone}</label>
+            <input className={field} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={s.phonePlaceholder} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">WhatsApp</label>
-            <input className={field} value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+58…" />
+            <label className="mb-1 block text-sm font-medium">{s.whatsapp}</label>
+            <input className={field} value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder={s.phonePlaceholder} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Estado actual</label>
+            <label className="mb-1 block text-sm font-medium">{s.currentEstado}</label>
             <select className={field} value={currentEstado} onChange={(e) => setCurrentEstado(e.target.value)}>
-              <option value="">Seleccionar…</option>
-              {ESTADOS.map((s) => <option key={s} value={s}>{s}</option>)}
+              <option value="">{s.selectEstado}</option>
+              {ESTADOS.map((st) => <option key={st} value={st}>{st}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Especialidad (separar por comas)</label>
-            <input className={field} value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="estructural, geotécnico" />
+            <label className="mb-1 block text-sm font-medium">{s.specialty}</label>
+            <input className={field} value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder={s.specialtyPlaceholder} />
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Estados donde puedes operar</label>
+          <label className="mb-1 block text-sm font-medium">{s.operatingEstados}</label>
           <div className="flex flex-wrap gap-2">
-            {ESTADOS.map((s) => (
+            {ESTADOS.map((st) => (
               <button
-                key={s}
+                key={st}
                 type="button"
-                onClick={() => toggleOperating(s)}
+                onClick={() => toggleOperating(st)}
                 className={`rounded-full border px-3 py-1 text-xs ${
-                  operating.includes(s) ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950/40' : 'border-black/15 dark:border-white/15'
+                  operating.includes(st) ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950/40' : 'border-black/15 dark:border-white/15'
                 }`}
               >
-                {s}
+                {st}
               </button>
             ))}
           </div>
@@ -187,19 +272,19 @@ export default function RegistrarsePage() {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium">Credencial (foto) *</label>
+            <label className="mb-1 block text-sm font-medium">{s.credentialPhoto}</label>
             <input className={field} type="file" accept="image/*,application/pdf" onChange={(e) => setCredFile(e.target.files?.[0] ?? null)} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Selfie con la credencial</label>
+            <label className="mb-1 block text-sm font-medium">{s.selfie}</label>
             <input className={field} type="file" accept="image/*" onChange={(e) => setSelfieFile(e.target.files?.[0] ?? null)} />
-            <p className="mt-1 text-xs text-zinc-500">Rostro + credencial + fecha escrita a mano. Reduce suplantación.</p>
+            <p className="mt-1 text-xs text-zinc-500">{s.selfieHint}</p>
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Código de activación (si tienes uno)</label>
-          <input className={field} value={activationCode} onChange={(e) => setActivationCode(e.target.value)} placeholder="Emitido por coordinadores de brigada" />
+          <label className="mb-1 block text-sm font-medium">{s.activationCode}</label>
+          <input className={field} value={activationCode} onChange={(e) => setActivationCode(e.target.value)} placeholder={s.activationCodePlaceholder} />
         </div>
 
         {err && <p className="text-sm text-red-600">{err}</p>}
@@ -208,7 +293,7 @@ export default function RegistrarsePage() {
           disabled={saving}
           className="w-full rounded-full bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
         >
-          {saving ? 'Enviando…' : 'Enviar registro'}
+          {saving ? s.sending : s.submit}
         </button>
       </form>
     </div>

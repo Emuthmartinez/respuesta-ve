@@ -3,8 +3,20 @@ import type { Metadata } from 'next';
 import { getResponderProfile, isActiveVerified } from '@/lib/auth';
 import { AssessmentForm } from '@/components/voluntarios/AssessmentForm';
 import { Disclaimer } from '@/components/Disclaimer';
+import { getLocale } from '@/lib/i18n-server';
 
 export const metadata: Metadata = { title: 'Evaluación ATC-20 — Respuesta VE' };
+
+const STR = {
+  es: {
+    heading: 'Evaluación de estructura (ATC-20)',
+    desc: 'Tu dictamen actualiza el cartel del edificio en el mapa. No sustituye una evaluación oficial.',
+  },
+  en: {
+    heading: 'Structural assessment (ATC-20)',
+    desc: 'Your verdict updates the building placard on the map. It does not replace an official assessment.',
+  },
+} as const;
 
 export default async function EvaluarPage({
   params,
@@ -13,6 +25,8 @@ export default async function EvaluarPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ req?: string }>;
 }) {
+  const locale = await getLocale();
+  const s = STR[locale];
   const { user, responder } = await getResponderProfile();
   if (!user) redirect('/voluntarios/acceder');
   if (!responder || !isActiveVerified(responder)) redirect('/voluntarios');
@@ -22,10 +36,9 @@ export default async function EvaluarPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold tracking-tight">Evaluación de estructura (ATC-20)</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{s.heading}</h1>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        Tu dictamen actualiza el cartel del edificio en el mapa. No sustituye una
-        evaluación oficial.
+        {s.desc}
       </p>
       <Disclaimer className="mt-3" />
       <AssessmentForm uid={user.id} buildingId={id} requestId={req ?? null} />

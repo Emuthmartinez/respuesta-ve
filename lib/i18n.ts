@@ -10,6 +10,14 @@
 export type Locale = 'es' | 'en';
 export const DEFAULT_LOCALE: Locale = 'es';
 
+/** A string that exists in both locales. Used by lib/*.ts label dictionaries. */
+export type Bilingual = { es: string; en: string };
+
+/** Pick the active-locale variant from a bilingual {es,en} pair. */
+export function tr(b: Bilingual, locale: Locale): string {
+  return b[locale];
+}
+
 // ---------------------------------------------------------------------------
 // Dictionary
 // ---------------------------------------------------------------------------
@@ -123,34 +131,34 @@ const dict = {
       text: 'Herramienta comunitaria para la respuesta al terremoto · Las ubicaciones se muestran de forma aproximada para proteger a las personas.',
     },
     principles: {
-      heading: 'Principios de diseño',
+      heading: 'Cómo trabajamos',
       items: [
         {
           icon: '🛡️',
-          title: 'Anti-saqueo',
-          text: 'Las coordenadas exactas NUNCA son públicas. Se muestran aproximadas para proteger a las personas.',
+          title: 'Ubicaciones protegidas',
+          text: 'El mapa abierto solo muestra zonas aproximadas. Las direcciones exactas no se exponen, para que ningún reporte se use en contra de las víctimas.',
         },
         {
           icon: '🔒',
-          title: 'Sin rastreo',
-          text: 'Sin rastreo, sin anuncios y sin fines comerciales.',
+          title: 'Tu privacidad primero',
+          text: 'Nada de rastreadores, publicidad ni venta de datos. Lo que compartes sirve únicamente para coordinar la ayuda.',
         },
         {
           icon: '🌐',
-          title: 'Funciona en 3G',
-          text: 'Diseñada para conexiones lentas y datos limitados.',
+          title: 'Liviana de verdad',
+          text: 'Pensada para abrir rápido aunque tengas poca señal o pocos datos.',
         },
         {
           icon: '🤝',
-          title: 'Ayuda gratuita',
-          text: 'Nunca pedimos dinero a cambio de ayuda. Nunca.',
+          title: 'Ayuda sin condiciones',
+          text: 'Conectar con ayuda siempre es gratis. Nadie debería pagar por ser asistido.',
         },
         {
           icon: '📖',
           title: 'Primeros auxilios',
-          text: 'Guía basada en Cruz Roja, OMS y FEMA.',
+          text: 'Pasos esenciales con referencias de la Cruz Roja, la OMS y FEMA.',
           href: '/primeros-auxilios',
-          cta: 'Ver guía →',
+          cta: 'Abrir guía →',
         },
       ],
     },
@@ -272,34 +280,34 @@ const dict = {
       text: 'Community coordination tool for earthquake response · Locations are shown approximately to protect people.',
     },
     principles: {
-      heading: 'Design principles',
+      heading: 'How we work',
       items: [
         {
           icon: '🛡️',
-          title: 'Anti-looting',
-          text: 'Exact coordinates are NEVER public. Approximate locations protect people.',
+          title: 'Protected locations',
+          text: 'The open map shows only approximate areas. Exact addresses are never exposed, so no report can be used against survivors.',
         },
         {
           icon: '🔒',
-          title: 'No tracking',
-          text: 'No tracking, no ads, no commercial purpose.',
+          title: 'Privacy first',
+          text: 'No trackers, no ads, no data selling. What you share is used only to coordinate help.',
         },
         {
           icon: '🌐',
-          title: 'Works on 3G',
-          text: 'Designed for slow connections and limited data.',
+          title: 'Genuinely lightweight',
+          text: 'Built to open fast even on weak signal or a limited data plan.',
         },
         {
           icon: '🤝',
-          title: 'Free help',
-          text: 'We never ask for money in exchange for help. Ever.',
+          title: 'Help with no strings',
+          text: 'Reaching help is always free. No one should have to pay to be assisted.',
         },
         {
           icon: '📖',
           title: 'First aid',
-          text: 'Guide based on Red Cross, WHO and FEMA.',
+          text: 'Essential steps referenced from the Red Cross, WHO, and FEMA.',
           href: '/primeros-auxilios',
-          cta: 'View guide →',
+          cta: 'Open guide →',
         },
       ],
     },

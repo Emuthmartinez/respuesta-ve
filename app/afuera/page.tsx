@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getSupabaseServer } from '@/lib/supabase/server';
-import { ORG_CATEGORY_LABEL, ORG_SCOPE_LABEL } from '@/lib/orgs';
+import { orgCategoryLabel, orgScopeLabel } from '@/lib/orgs';
 import type { OrgPublic, CenterPublic } from '@/lib/orgs';
-import { SAFETY_COPY } from '@/lib/safety-copy';
+import { safetyCopy as getSafetyCopy } from '@/lib/safety-copy';
 import NearestCenters from '@/components/NearestCenters';
 import { t } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n-server';
@@ -47,8 +47,12 @@ export default async function AfueraPage() {
     orgs = (o.data ?? []) as OrgPublic[];
     centers = (c.data ?? []) as CenterPublic[];
   }
-  const donorOrgs = orgs.filter(isDonorOrg);
+  const FEATURED_SLUG = 'we-love-foundation';
+  const donorOrgs = orgs
+    .filter(isDonorOrg)
+    .sort((a, b) => (b.slug === FEATURED_SLUG ? 1 : 0) - (a.slug === FEATURED_SLUG ? 1 : 0));
   const peopleOrgs = orgs.filter(isPeopleOrg);
+  const featuredLabel = locale === 'en' ? '★ Recommended' : '★ Recomendada';
 
   const ctaLabels = {
     read: da.org_cta_read,
@@ -57,11 +61,7 @@ export default async function AfueraPage() {
     campaign: da.org_cta_campaign,
   };
 
-  const safetyCopy = locale === 'en' ? d.safety : {
-    donation: SAFETY_COPY.donation,
-    scamWarning: SAFETY_COPY.scamWarning,
-    skills: SAFETY_COPY.skills,
-  };
+  const sc = getSafetyCopy(locale);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -76,7 +76,7 @@ export default async function AfueraPage() {
       </div>
 
       <div className="mt-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
-        <strong>{da.scam_heading}</strong> {safetyCopy.donation} {safetyCopy.scamWarning}{' '}
+        <strong>{da.scam_heading}</strong> {sc.donation} {sc.scamWarning}{' '}
         {da.scam_verify_prefix}{' '}
         <a className="underline" href="https://www.charitynavigator.org" target="_blank" rel="noreferrer">Charity Navigator</a>{' '}
         {da.scam_verify_and}{' '}
@@ -96,16 +96,18 @@ export default async function AfueraPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {donorOrgs.map((o) => {
               const cta = orgCTA(o, ctaLabels);
+              const featured = o.slug === FEATURED_SLUG;
               return (
-                <div key={o.id} className="flex flex-col rounded-lg border border-black/10 p-4 dark:border-white/10">
-                  <div className="flex items-center gap-2">
+                <div key={o.id} className={`flex flex-col rounded-lg border p-4 ${featured ? 'border-red-400 ring-1 ring-red-400/40' : 'border-black/10 dark:border-white/10'}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {featured && <span className="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-semibold text-white">{featuredLabel}</span>}
                     <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                      {ORG_CATEGORY_LABEL[o.category] ?? o.category}
+                      {orgCategoryLabel(o.category, locale)}
                     </span>
                     {o.verified && <span className="text-[11px] text-green-600">{da.org_verified}</span>}
                   </div>
                   <div className="mt-2 font-medium">{o.name}</div>
-                  <div className="text-xs text-zinc-500">{ORG_SCOPE_LABEL[o.scope] ?? o.scope}</div>
+                  <div className="text-xs text-zinc-500">{orgScopeLabel(o.scope, locale)}</div>
                   {o.description && <p className="mt-1 flex-1 text-sm text-zinc-600 dark:text-zinc-400">{o.description}</p>}
                   {cta && (
                     <div className="mt-3">
@@ -154,7 +156,7 @@ export default async function AfueraPage() {
                 <div key={o.id} className="flex flex-col rounded-lg border border-black/10 bg-blue-50/40 p-4 dark:border-white/10 dark:bg-blue-950/20">
                   <div className="flex items-center gap-2">
                     <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                      {ORG_CATEGORY_LABEL[o.category] ?? o.category}
+                      {orgCategoryLabel(o.category, locale)}
                     </span>
                     {o.verified && <span className="text-[11px] text-green-600">{da.org_verified}</span>}
                   </div>
