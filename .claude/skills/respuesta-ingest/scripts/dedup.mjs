@@ -204,6 +204,13 @@ export function mergeInto(existing, lead) {
   const sourcesSet = new Set([...(existing._sources ?? []), ...(lead._sources ?? [])]);
   existing._sources = Array.from(sourcesSet);
 
+  // Keep the STRONGEST contributing source tier (drives the fast-lane gate):
+  // a single official/media corroboration upgrades a lead's trust.
+  const TIER_RANK = { official: 4, media: 3, journalist: 2, social: 1, unknown: 0 };
+  if ((TIER_RANK[lead.best_tier] ?? 0) > (TIER_RANK[existing.best_tier] ?? 0)) {
+    existing.best_tier = lead.best_tier;
+  }
+
   // Upgrade damage level (order: collapsed > severe > moderate > minor > no_visible_damage > unknown)
   const DAMAGE_ORDER = ['unknown', 'no_visible_damage', 'minor', 'moderate', 'severe', 'collapsed'];
   const idxExisting = DAMAGE_ORDER.indexOf(existing.damage_level);

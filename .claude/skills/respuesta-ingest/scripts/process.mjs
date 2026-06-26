@@ -6,14 +6,14 @@
  *
  * @typedef {import('./gazetteer.mjs').GazEntry} GazEntry
  * @typedef {{ source:string, platform:string, handle?:string, id:string, url:string, text:string, createdAt?:string, mediaUrls?:string[], engagement?:number }} RawItem
- * @typedef {{ lat:number, lng:number, estado:string, municipio:string, parroquia:string|null, landmark_description:string|null, damage_level:string, people_status:string, description:string, source_channel:string, corroboration_count:number, _dedupKey:string, _sources:string[] }} Lead
+ * @typedef {{ lat:number, lng:number, estado:string, municipio:string, parroquia:string|null, landmark_description:string|null, damage_level:string, people_status:string, description:string, source_channel:string, corroboration_count:number, best_tier?:string, _dedupKey:string, _sources:string[] }} Lead
  * @typedef {{ name?:string, last_seen_text?:string, estado?:string, source_url:string, registry:string, note:string }} MissingMention
  * @typedef {{ claim:string, verdict:'false'|'misleading'|'unverified'|'satire', explanation:string, debunk_url?:string, source_url:string, related_place?:string, severity:'low'|'medium'|'high' }} MisinformationItem
  */
 
 import { bestPlace, extractNamedBuilding } from './gazetteer.mjs';
 import { classifyDamage } from './classify.mjs';
-import { isLikelyMisinformation, detectDebunk } from './trust.mjs';
+import { isLikelyMisinformation, detectDebunk, sourceTier } from './trust.mjs';
 import { isDuplicate, mergeInto, dedupKey } from './dedup.mjs';
 
 // ---------------------------------------------------------------------------
@@ -176,6 +176,7 @@ export function processBatch(rawItems, existingLeads = []) {
       description:          buildDescription(item, channel),
       source_channel:       channel,
       corroboration_count:  1,
+      best_tier:            sourceTier(item),  // strongest source tier seen for this lead
       _dedupKey:            '', // filled below
       _sources:             [item.url],
     };

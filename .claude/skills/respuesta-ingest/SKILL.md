@@ -22,6 +22,41 @@ triggers:
 
 # respuesta-ingest — Procedimiento de Tick
 
+## ⚡ Forma canónica de ejecutar (HEADLESS — sin agente)
+
+**No ejecutes el tick a través del agente `claude` interactivo.** Hacerlo mete el
+firehose social crudo (cientos de posts xpoz) en la ventana de contexto del modelo
+y la revienta antes de insertar. En su lugar corre el orquestador headless, que hace
+TODO en Node puro (social vía `mcporter`→xpoz, web, video) y solo usa un modelo —
+opcional y acotado — para anotar los ≤~20 leads finales:
+
+```sh
+.claude/skills/respuesta-ingest/run-tick.sh          # un tick completo, sin contexto
+```
+
+Programado cada hora con launchd:
+
+```sh
+cp .claude/skills/respuesta-ingest/com.respuestave.ingest.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.respuestave.ingest.plist
+tail -f ~/.respuesta-ingest/ingest.log ~/.respuesta-ingest/ingest.err.log
+```
+
+**Pasos de activación (una sola vez):**
+1. `mcporter auth xpoz` — autoriza xpoz para llamadas headless (sin esto, la pata
+   social se omite y solo corre web+video; el tick igual completa).
+2. Instala el plist de launchd (arriba) para la cadencia horaria.
+3. *(Opcional)* En `run-tick.sh`: `INGEST_FASTLANE=1` activa el auto-publish al
+   layer "Por confirmar" (requiere migración `0028`, ya aplicada); `INGEST_JUDGE=1`
+   activa la capa de triage LLM (`claude -p`, acotado a `leads.json`).
+
+Piezas (en `scripts/`): `orchestrator.mjs` (entrada), `social.mjs` (xpoz headless),
+`fastlane.mjs` (compuerta determinista de auto-publish), `judge.mjs` (juez LLM
+opcional). El **procedimiento manual de abajo queda como referencia del flujo
+determinista** — el orquestador lo ejecuta por ti.
+
+---
+
 ## Entorno requerido
 
 Antes de ejecutar cualquier paso exporta las rutas donde viven las herramientas locales.

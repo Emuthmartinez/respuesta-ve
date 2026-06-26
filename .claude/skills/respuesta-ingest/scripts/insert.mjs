@@ -80,6 +80,12 @@ export async function insertLeads(leads, env) {
     Accept:         'application/json',
   };
 
+  // Fast-lane auto-publish is opt-in via INGEST_FASTLANE=1, which ALSO signals
+  // that migration 0028 (the RPC that accepts p_best_tier/p_autopublish/
+  // p_content_hash) is deployed. With the flag off we send only the original 16
+  // params, so this keeps working against the pre-0028 RPC (everything → pending).
+  const fastlaneOn = process.env.INGEST_FASTLANE === '1';
+
   for (const lead of leads) {
     const payload = {
       p_ip_hash:              PIPELINE_IP_HASH,
@@ -100,6 +106,14 @@ export async function insertLeads(leads, env) {
       p_llm_confidence:       lead.llm_confidence ?? 'low',
       p_llm_related_ids:      lead.llm_related_ids ?? null,
     };
+
+    if (fastlaneOn) {
+      // content_hash = stable signature of the lead (for cross-run idempotency).
+      payload.p_content_hash = createHash('sha256').update(lead._dedupKey ?? '').digest('hex');
+      payload.p_best_tier    = lead.best_tier ?? 'unknown';
+      // The RPC RE-ENFORCES the gate; this is only the caller's request.
+      payload.p_autopublish  = Boolean(lead._fastlane?.eligible);
+    }
 
     try {
       const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/submit_ingest_lead`, {
