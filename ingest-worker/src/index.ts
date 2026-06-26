@@ -29,6 +29,29 @@ interface RawItem {
   title: string;
   description: string;
   link: string;
+  tier?: string; // source trust tier (official|media|journalist|social|unknown)
+}
+
+// Source-tier maps (mirror lib trust.mjs). Drives the fast-lane gate: only
+// 'official' / 'media' tiers auto-publish a single-source lead.
+const SOURCE_TIERS: Record<string, string> = {
+  southcom: 'official', usembassyve: 'official', nayibbukele: 'official', sa_defensa: 'official',
+  caracaschron: 'media',
+  orlvndoa: 'journalist', agusantonetti: 'journalist', emmarincon: 'journalist',
+  iamgermania: 'journalist', metavarce: 'journalist', rcamachovzla: 'journalist',
+};
+const TRUSTED_DOMAINS = [
+  'efectococuyo.com', 'elpitazo.net', 'runrun.es', 'talcualdigital.com', 'lapatilla.com',
+  'cronica.uno', 'elnacional.com', 'reuters.com', 'apnews.com', 'bbc.com', 'bbc.co.uk',
+  'elpais.com', 'france24.com', 'dw.com',
+];
+
+function tierForHandle(handle: string): string {
+  return SOURCE_TIERS[handle.toLowerCase().replace(/^@/, '')] ?? 'social';
+}
+function tierForUrl(link: string): string {
+  const l = link.toLowerCase();
+  return TRUSTED_DOMAINS.some((d) => l.includes(d)) ? 'media' : 'unknown';
 }
 
 // ---- gazetteer of affected places (name aliases -> coords/admin) ----
@@ -139,7 +162,9 @@ async function fetchNews(): Promise<RawItem[]> {
     const res = await fetch(url, { headers: { 'User-Agent': 'RespuestaVE-Ingest/1.0' } });
     if (!res.ok) return [];
     const j = (await res.json()) as { articles?: { url: string; title: string }[] };
-    return (j.articles ?? []).map((a) => ({ title: a.title ?? '', description: '', link: a.url ?? '' }));
+    return (j.articles ?? []).map((a) => ({
+      title: a.title ?? '', description: '', link: a.url ?? '', tier: tierForUrl(a.url ?? ''),
+    }));
   } catch {
     return [];
   }
@@ -210,6 +235,7 @@ async function fetchXpoz(env: Env, queries: string[] = XPOZ_QUERIES): Promise<Ra
           title: row.text,
           description: '',
           link: handle ? `https://x.com/${handle}/status/${row.id}` : `https://x.com/i/web/status/${row.id}`,
+          tier: handle ? tierForHandle(handle) : 'social',
         });
       }
     } catch {
@@ -273,23 +299,52 @@ function parseCsvRow(line: string): string[] {
   return out;
 }
 
-async function insertLead(env: Env, lead: Lead): Promise<boolean> {
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/buildings`, {
+// Stable throttle key for the worker (separate bucket from the Mac pipeline).
+const WORKER_IP_HASH = 'cf-worker-ingest';
+
+// Insert via the submit_ingest_lead RPC (migration 0028) — the controlled write
+// path. p_autopublish=true lets the RPC's SERVER-ENFORCED fast-lane gate decide:
+// a trusted-tier (official/media) non-life-safety damage lead auto-publishes to
+// the provisional "Por confirmar" layer; everything else stays pending. The
+// content_hash gives cross-run idempotency (re-collected lead → corroborated).
+async function insertLead(
+  env: Env, lead: Lead, bestTier: string, contentHash: string, sourceChannel: string,
+): Promise<{ ok: boolean; autopublished: boolean }> {
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/submit_ingest_lead`, {
     method: 'POST',
     headers: {
       apikey: env.SUPABASE_ANON_KEY,
       Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
-      Prefer: 'return=minimal',
+      Accept: 'application/json',
     },
-    body: JSON.stringify(lead),
+    body: JSON.stringify({
+      p_ip_hash: WORKER_IP_HASH,
+      p_lat: lead.lat,
+      p_lng: lead.lng,
+      p_estado: lead.estado,
+      p_municipio: lead.municipio,
+      p_parroquia: lead.parroquia,
+      p_landmark: null,
+      p_description: lead.description,
+      p_damage_level: lead.damage_level,
+      p_people_status: lead.people_status,
+      p_source_channel: sourceChannel,
+      p_corroboration_count: 1,
+      p_best_tier: bestTier,
+      p_autopublish: true,
+      p_content_hash: contentHash,
+    }),
   });
-  return res.ok;
+  if (!res.ok) return { ok: false, autopublished: false };
+  const body = (await res.json().catch(() => null)) as { ok?: boolean; autopublished?: boolean } | null;
+  return { ok: Boolean(body?.ok), autopublished: Boolean(body?.autopublished) };
 }
 
-async function runIngest(env: Env): Promise<{ scanned: number; inserted: number; skipped: number }> {
+async function runIngest(env: Env): Promise<{ scanned: number; inserted: number; autopublished: number; skipped: number }> {
   const items = [...(await fetchNews()), ...(await fetchX(env)), ...(await fetchXpoz(env))];
   let inserted = 0;
+  let autopublished = 0;
   let skipped = 0;
   for (const it of items) {
     const text = `${it.title} ${it.description}`;
@@ -309,6 +364,7 @@ async function runIngest(env: Env): Promise<{ scanned: number; inserted: number;
       (a, b) => Math.max(...b.names.map((n) => n.length)) - Math.max(...a.names.map((n) => n.length)),
     )[0];
 
+    const isSocial = it.link.includes('x.com');
     const lead: Lead = {
       lat: place.lat,
       lng: place.lng,
@@ -317,14 +373,24 @@ async function runIngest(env: Env): Promise<{ scanned: number; inserted: number;
       parroquia: place.parroquia,
       damage_level: cls.damage,
       people_status: cls.people,
-      description: `[${it.link.includes('x.com') ? 'SOCIAL' : 'AUTO-RSS'} - verificar] ${it.title}. Fuente: ${it.link}`.slice(0, 1900),
+      description: `[${isSocial ? 'SOCIAL' : 'AUTO-RSS'} - verificar] ${it.title}. Fuente: ${it.link}`.slice(0, 1900),
     };
-    if (await insertLead(env, lead)) {
+
+    // content_hash signature mirrors the Mac pipeline's no-landmark dedup key
+    // (norm(estado)|norm(parroquia|municipio)|lat3|lng3) for best-effort
+    // cross-system dedup + the worker's own cross-run idempotency.
+    const sig = `${norm(place.estado)}|${norm(place.parroquia ?? place.municipio)}|${place.lat.toFixed(3)}|${place.lng.toFixed(3)}`;
+    const contentHash = await sha(sig);
+    const sourceChannel = isSocial ? 'social_scan' : 'news_scrape';
+
+    const r = await insertLead(env, lead, it.tier ?? 'unknown', contentHash, sourceChannel);
+    if (r.ok) {
       await env.DEDUP.put(key, '1', { expirationTtl: 1209600 });
       inserted++;
+      if (r.autopublished) autopublished++;
     }
   }
-  return { scanned: items.length, inserted, skipped };
+  return { scanned: items.length, inserted, autopublished, skipped };
 }
 
 export default {
