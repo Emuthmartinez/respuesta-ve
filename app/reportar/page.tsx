@@ -13,6 +13,7 @@ import { tr } from '@/lib/i18n';
 import { useLocale } from '@/lib/locale-context';
 import { reportSchema } from '@/lib/reportSchema';
 import { Disclaimer } from '@/components/Disclaimer';
+import { ManageLink } from '@/components/ManageLink';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error' | 'backend-missing';
 
@@ -108,6 +109,7 @@ export default function ReportarPage() {
   const [contact, setContact] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [token, setToken] = useState('');
 
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -169,6 +171,7 @@ export default function ReportarPage() {
         );
         return;
       }
+      if (json.token) setToken(json.token);
       setStatus('success');
     } catch {
       setStatus('error');
@@ -183,12 +186,13 @@ export default function ReportarPage() {
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           {s.successText}
         </p>
+        {token && <ManageLink token={token} />}
         <div className="mt-6 flex justify-center gap-2">
           <Link href="/" className="rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white">
             {s.viewMap}
           </Link>
           <button
-            onClick={() => { setStatus('idle'); setCoords(null); }}
+            onClick={() => { setStatus('idle'); setCoords(null); setToken(''); }}
             className="rounded-full border border-black/15 px-4 py-2 text-sm font-medium dark:border-white/20"
           >
             {s.reportAnother}

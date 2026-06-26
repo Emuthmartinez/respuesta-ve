@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { DONATION_ITEMS, donationItemLabel } from '@/lib/orgs';
-import { tr } from '@/lib/i18n';
 import { useLocale } from '@/lib/locale-context';
 import { AddressSearch } from '@/components/AddressSearch';
 import type { PickedLocation } from '@/components/AddressSearch';
+import { ManageLink } from '@/components/ManageLink';
 
 const field =
   'w-full rounded-md border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-zinc-900';
@@ -99,6 +99,7 @@ export default function AgregarCentroPage() {
   const [monetaryUrl, setMonetaryUrl] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [err, setErr] = useState('');
+  const [token, setToken] = useState('');
 
   function toggle(item: string) {
     setPriority((p) => (p.includes(item) ? p.filter((x) => x !== item) : [...p, item]));
@@ -150,6 +151,7 @@ export default function AgregarCentroPage() {
         );
         return;
       }
+      if (json.token) setToken(json.token);
       setStatus('success');
     } catch {
       setStatus('error');
@@ -164,6 +166,7 @@ export default function AgregarCentroPage() {
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           {s.successText}
         </p>
+        {token && <ManageLink token={token} />}
         <Link href="/afuera" className="mt-6 inline-block rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white">
           {s.backToDonations}
         </Link>

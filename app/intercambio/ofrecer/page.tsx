@@ -34,6 +34,7 @@ const STR = {
     successTextHighStakes: 'Tu oferta queda en revisión: un coordinador verificará tu credencial antes de publicarla y conectarte.',
     successTextNormal: 'Tu oferta queda en revisión por un coordinador antes de publicarse.',
     backToExchange: 'Volver',
+    myOffers: 'Ver mis ofertas',
     errInvalidSession: 'Sesión no válida.',
     errContactInText: 'No incluyas números de teléfono en la descripción — usa el campo de contacto privado.',
     errGeneric: 'No se pudo enviar.',
@@ -61,6 +62,7 @@ const STR = {
     successTextHighStakes: 'Your offer is under review: a coordinator will verify your credential before publishing it and connecting you.',
     successTextNormal: 'Your offer is under review by a coordinator before being published.',
     backToExchange: 'Back',
+    myOffers: 'View my offers',
     errInvalidSession: 'Invalid session.',
     errContactInText: 'Do not include phone numbers in the description — use the private contact field.',
     errGeneric: 'Could not submit.',
@@ -164,7 +166,10 @@ export default function OfrecerPage() {
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           {HIGH_STAKES.has(skill) ? s.successTextHighStakes : s.successTextNormal}
         </p>
-        <Link href="/intercambio" className="mt-6 inline-block rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white">{s.backToExchange}</Link>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link href="/intercambio" className="rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white">{s.backToExchange}</Link>
+          <Link href="/intercambio/mis-ofertas" className="rounded-full border border-black/15 px-4 py-2 text-sm font-medium dark:border-white/20">{s.myOffers}</Link>
+        </div>
       </div>
     );
   }

@@ -9,6 +9,7 @@ import { NEEDS_TYPES, ESTADOS } from '@/lib/responder';
 import { tr } from '@/lib/i18n';
 import { useLocale } from '@/lib/locale-context';
 import { Disclaimer } from '@/components/Disclaimer';
+import { ManageLink } from '@/components/ManageLink';
 
 const field =
   'w-full rounded-md border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-zinc-900';
@@ -156,7 +157,7 @@ export default function SolicitarInspeccionPage() {
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           {s.successText}
         </p>
-        <code className="mt-3 inline-block break-all rounded-md bg-zinc-100 px-3 py-2 text-xs dark:bg-zinc-800">{token}</code>
+        <ManageLink token={token} />
         <p className="mt-3 text-xs text-zinc-500">
           {s.priorityNote}
         </p>

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { getSupabaseServer } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -25,6 +25,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'backend_unconfigured' }, { status: 503 });
   }
 
+  const token = randomBytes(24).toString('hex');
+  const token_hash = createHash('sha256').update(token).digest('hex');
+
   const { data, error } = await sb.rpc('submit_donation_center', {
     p_ip_hash: ipHash(req),
     p_name: body.name,
@@ -42,8 +45,12 @@ export async function POST(req: Request) {
     p_needs: body.needs ?? null,
     p_accepts_monetary: body.accepts_monetary ?? false,
     p_monetary_url: body.monetary_url ?? null,
+    p_token_hash: token_hash,
   });
 
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
-  return NextResponse.json(data, { status: data?.ok ? 200 : 429 });
+  if (data?.ok) {
+    return NextResponse.json({ ...data, token, entity: 'donation_center' }, { status: 200 });
+  }
+  return NextResponse.json(data, { status: 429 });
 }
