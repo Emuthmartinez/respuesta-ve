@@ -16,7 +16,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { parsePfif, pfifDisplayName, type PfifPerson } from '@/lib/pfif';
-import { findPossibleDuplicates, type MatchableRecord } from '@/lib/missing-persons';
+import {
+  findPossibleDuplicates, nameBlockKey, detectMultiPerson, normalizeCedula,
+  type MatchableRecord,
+} from '@/lib/missing-persons';
 
 export const dynamic = 'force-dynamic';
 
@@ -129,12 +132,13 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
+    const name = pfifDisplayName(p);
     const { data, error } = await sb.rpc('submit_missing_person_record', {
       p_ip_hash: INGEST_IP_HASH,
       p_external_record_id: p.personRecordId,
       p_source: source,
       p_external_url: p.sourceUrl,
-      p_display_name: pfifDisplayName(p),
+      p_display_name: name,
       p_last_seen_lat: null,
       p_last_seen_lng: null,
       p_last_seen_at: null,
@@ -147,6 +151,12 @@ export async function POST(req: NextRequest) {
       p_source_updated_at: p.sourceDate,
       p_possible_duplicate_ids: dupIds.length ? dupIds : null,
       p_dedupe_score: topScore,
+      // dedup fields (photo hashing happens in the local routine, not here)
+      p_cedula_normalized: normalizeCedula(null),
+      p_photo_phash: null,
+      p_name_phonetic: nameBlockKey(name) || null,
+      p_is_multi_person: detectMultiPerson(name),
+      p_cluster_reason: dupIds.length ? ['name'] : null,
     });
 
     const r = data as { ok?: boolean; id?: string; action?: string; error?: string } | null;

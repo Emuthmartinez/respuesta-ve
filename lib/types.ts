@@ -48,6 +48,13 @@ export interface MissingPinPublic {
   // hits into one "posible misma persona" card (advisory — never a merge).
   age_estimate: number | null;
   possible_duplicate_ids: string[] | null;
+  // Dedup engine (migration 0016): cluster_id groups the same person's
+  // scattered records; cedula_confirmed drives the "Identificados" section;
+  // cluster_size badges the count; is_multi_person flags a group report.
+  cluster_id: string | null;
+  cedula_confirmed: boolean;
+  cluster_size: number;
+  is_multi_person: boolean;
   last_seen_at: string | null;
   created_at: string;
 }
