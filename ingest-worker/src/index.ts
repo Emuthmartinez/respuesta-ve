@@ -317,7 +317,7 @@ async function runIngest(env: Env): Promise<{ scanned: number; inserted: number;
       parroquia: place.parroquia,
       damage_level: cls.damage,
       people_status: cls.people,
-      description: `[AUTO-RSS - verificar] ${it.title}. Fuente: ${it.link}`.slice(0, 1900),
+      description: `[${it.link.includes('x.com') ? 'SOCIAL' : 'AUTO-RSS'} - verificar] ${it.title}. Fuente: ${it.link}`.slice(0, 1900),
     };
     if (await insertLead(env, lead)) {
       await env.DEDUP.put(key, '1', { expirationTtl: 1209600 });
