@@ -1,8 +1,15 @@
-# Plataforma de Respuesta — Terremoto Venezuela 2026
+# Respuesta VE Instance Architecture
 
-A unified crisis-response platform for the June 2026 Venezuela earthquakes
-(7.2 + 7.5 twin quakes; La Guaira, Caracas, Miranda, Aragua, Carabobo,
-Trujillo). Spanish-first, mobile-first PWA.
+Respuesta VE is the first live instance of the public Humanitarian Federation
+Platform. This repo owns the Venezuela-specific web app, Supabase schema,
+moderation flows, responder workflows, and Cloudflare deployment for the June
+2026 Venezuela earthquakes. The reusable, disaster-agnostic contracts and core
+helpers now live in the platform repo:
+[github.com/Emuthmartinez/humanitarian-federation-platform](https://github.com/Emuthmartinez/humanitarian-federation-platform).
+
+The instance is Spanish-first and mobile-first. It implements the platform's
+source-aware federation model for the twin earthquakes while preserving local
+operational choices, language, safety copy, maps, and coordinator workflows.
 
 ## What this is (and isn't)
 
@@ -16,10 +23,13 @@ It is **the damage + coordination layer** that existing tools lack:
 3. **Responder platform** — structural/civil engineers, architects,
    search-and-rescue, medical, and civil-protection volunteers register,
    upload credentials, get verified, and act.
-4. **Missing persons — FEDERATED, not duplicated.** We link out to and
+4. **Missing persons — federated, not duplicated.** We link out to and
    aggregate existing registries (e.g. venezuelatebusca.com) and the open
-   **PFIF / Google Person Finder** standard. Map pins show "last seen here"
+   **PFIF / Google Person Finder** pattern. Map pins show "last seen here"
    and link to the authoritative entry. We do **not** become a competing silo.
+5. **Platform proof instance** — our `/api/v1/*` routes, public projections,
+   partner badges, and dedup/status logic are the first deployed proof of the
+   generic platform contracts.
 
 ## Privacy model (non-negotiable)
 
@@ -53,6 +63,17 @@ not official structural certifications. UI must always direct users to
 | `assessments` | Engineer placards; a trigger reflects the latest onto the building. |
 | `missing_person_pins` | Federated "last seen" pins linking to external registries. |
 | `buildings_public` / `missing_person_pins_public` | Fuzzed public projections. |
+
+## Repo boundary
+
+| Concern | Respuesta VE instance repo | Humanitarian Federation Platform repo |
+|---|---|---|
+| Public crisis website | Yes | No |
+| Venezuela-specific copy/data/routes | Yes | Example only |
+| Supabase migrations/RLS/RPCs | Yes | Guidance only |
+| Reusable schemas/redaction/matching/trust docs | Consumes/proves | Owns |
+| Future multi-disaster hosted ledger | No | Roadmap |
+| Partner badge semantics | Implements | Defines |
 
 ## Roadmap
 

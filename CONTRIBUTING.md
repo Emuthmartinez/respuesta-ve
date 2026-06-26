@@ -58,3 +58,11 @@ Good first issues are usually docs, translation, accessibility, API examples,
 small UI polish, or adapters for public data sources with clear link-backs.
 Anything that changes moderation, responder access, public privacy, or crisis
 triage deserves design review before implementation.
+
+## Platform vs instance work
+
+Use this repo for Venezuela-specific app work: routes, copy, Supabase
+migrations, moderation, responder workflows, and deployment. Use
+`Emuthmartinez/humanitarian-federation-platform` for generic federation
+contracts, reusable redaction/matching/trust helpers, badge semantics, and
+multi-disaster instance guidance.

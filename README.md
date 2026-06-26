@@ -8,6 +8,14 @@ donation directory, a skills↔needs marketplace, and a misinformation board.
 
 Live: **[respuestave.org](https://respuestave.org)**
 
+Respuesta VE is the first live instance of the public
+**Humanitarian Federation Platform**:
+[github.com/Emuthmartinez/humanitarian-federation-platform](https://github.com/Emuthmartinez/humanitarian-federation-platform).
+This repo owns the Venezuela-specific site, deployment, moderation flows, and
+Supabase schema. The platform repo owns reusable federation contracts, redaction
+and matching primitives, trust/badge semantics, and instance guidance for any
+humanitarian crisis.
+
 ## Quick start
 
 ```bash
@@ -32,6 +40,9 @@ tell us what data you can exchange and what privacy constraints you need.
   info, cedula values, or raw photos from federated records.
 - Good first contributions are usually documentation, translation, accessibility,
   API-client examples, source adapters, and small UI fixes.
+- Generic platform contracts, new disaster-agnostic adapter designs, and badge
+  semantics belong in the platform repo first, then this instance can adopt
+  them.
 
 For repo setup and safety rules, see [CONTRIBUTING.md](CONTRIBUTING.md). For
 private vulnerability reports, see [SECURITY.md](SECURITY.md).
@@ -46,6 +57,8 @@ OpenNext (`pnpm run deploy`).
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — what the platform is, the privacy
   model, and the data model.
+- **[docs/PLATFORM_INSTANCE.md](docs/PLATFORM_INSTANCE.md)** — how this repo
+  relates to the generic Humanitarian Federation Platform.
 - **[AGENTS.md](AGENTS.md)** — conventions, build/test commands, and the
   security/RLS/i18n patterns to follow when changing code (for humans and AI
   agents alike).

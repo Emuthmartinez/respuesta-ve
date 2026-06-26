@@ -19,11 +19,18 @@ this repo** rather than inventing an API.
 ## Project overview
 
 **Respuesta VE** is a Spanish-first, mobile-first crisis-response PWA for the
-June 2026 Venezuela earthquakes. It is the **damage-map + coordination layer**
-other tools lack: crowdsourced building-damage reports, an inspection-request →
-claim → ATC-20 placard flow for verified responders, a federated missing-persons
-search, a donation directory, a skills↔needs marketplace, and a misinformation
-disclosure board.
+June 2026 Venezuela earthquakes. It is the first live instance of the public
+**Humanitarian Federation Platform** and provides the **damage-map +
+coordination layer** other tools lack: crowdsourced building-damage reports, an
+inspection-request → claim → ATC-20 placard flow for verified responders, a
+federated missing-persons search, a donation directory, a skills↔needs
+marketplace, and a misinformation disclosure board.
+
+Generic, disaster-agnostic platform contracts and helpers live in
+`/Users/eduardomuthmartinez/humanitarian-federation-platform` and the public
+repo `Emuthmartinez/humanitarian-federation-platform`. This repo should stay the
+Venezuela instance: runtime app, Supabase schema, local copy, moderation, and
+deployment.
 
 Two principles drive almost every design decision:
 
@@ -159,7 +166,7 @@ constraints.
 ## Database & migrations
 
 - Migrations are sequential SQL in `supabase/migrations/NNNN_name.sql`, currently
-  through `0023`. They are the source of truth and are version-controlled. Pick
+  through `0033`. They are the source of truth and are version-controlled. Pick
   the next free number; if two features land concurrently, renumber to keep the
   sequence monotonic and gap-free.
 - Apply via the Supabase MCP (`apply_migration`) or the Supabase CLI; keep the

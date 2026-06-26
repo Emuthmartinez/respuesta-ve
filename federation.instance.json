@@ -1,0 +1,22 @@
+{
+  "platform": "humanitarian-federation-platform",
+  "platformRepo": "https://github.com/Emuthmartinez/humanitarian-federation-platform",
+  "instance": "respuesta-ve",
+  "instanceRepo": "https://github.com/Emuthmartinez/respuesta-ve",
+  "eventId": "venezuela-earthquakes-2026",
+  "eventKind": "earthquake",
+  "publicUrl": "https://respuestave.org",
+  "apiBaseUrl": "https://respuestave.org/api/v1",
+  "domains": [
+    "respuestave.org",
+    "www.respuestave.org",
+    "respondeve.org",
+    "terremotovenezuela.org"
+  ],
+  "supports": {
+    "missingPersons": true,
+    "coordinationEntities": true,
+    "partnerBadges": true,
+    "statusSync": true
+  }
+}

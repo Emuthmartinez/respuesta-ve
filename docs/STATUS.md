@@ -10,9 +10,10 @@ land or re-scope an item. Architecture lives in
 
 Deployed to Cloudflare Workers (`respuesta-ve`), serving respuestave.org +
 respondeve.org + terremotovenezuela.org + `*.workers.dev`. DB migrations through
-`0027`. (The ownership/retraction feature is `0018`, `0019`, `0023`; the
+`0033`. (The ownership/retraction feature is `0018`, `0019`, `0023`; the
 partner-API + coordinator dedup-desk feature landed concurrently as
-`0020`–`0022`; the partner status/sync API is `0026`–`0027`.)
+`0020`–`0022`; the partner status/sync API is `0026`–`0027`; fastlane ingest
+and coordination-entity trust/badge work spans `0028`–`0033`.)
 
 - Public **damage map** (lazy-loaded + 3G list view), anonymous **report form**,
   drag-to-confirm **provisional placement**, density layers.
@@ -40,6 +41,9 @@ partner-API + coordinator dedup-desk feature landed concurrently as
 - Bilingual ES/EN public surfaces, light/dark mode, localized page metadata.
 - Automated multi-surface ingestion (separate `ingest-worker` + the
   `respuesta-ingest` skill) with an LLM bounded-annotator layer.
+- Public repo split: this repo is the Venezuela instance; the reusable
+  Humanitarian Federation Platform lives in
+  `Emuthmartinez/humanitarian-federation-platform`.
 
 ## Launch gates (do before wider public launch)
 
