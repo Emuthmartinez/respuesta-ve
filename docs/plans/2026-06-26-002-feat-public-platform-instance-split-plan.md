@@ -1,6 +1,6 @@
 ---
 title: Public Platform / Venezuela Instance Repo Split
-status: active
+status: completed
 created: 2026-06-26
 updated: 2026-06-26
 depth: deep
@@ -142,7 +142,7 @@ flowchart TB
   U5 --> U6
 ```
 
-- [ ] **U0 - Reconcile current branch before split**
+- [x] **U0 - Reconcile current branch before split**
   - **Goal:** make the current accepted work visible to the public default
     branch without losing the local `b6d8188` ingest commit.
   - **Files:** no edits expected; git refs and remote state only.
@@ -217,7 +217,7 @@ flowchart TB
   - **Verification:** current repo `pnpm test:logic`, `npx tsc --noEmit`, and
     `pnpm build` remain green.
 
-- [ ] **U5 - Publish repos and merge**
+- [x] **U5 - Publish repos and merge**
   - **Goal:** finish the requested public split and merge everything.
   - **Files:** git remotes and GitHub repo metadata.
   - **Approach:** create the new GitHub repo as public, push its initial main
@@ -227,7 +227,7 @@ flowchart TB
   - **Verification:** `gh repo view` shows both repos public; `git ls-remote`
     shows pushed refs; current repo worktree is clean.
 
-- [ ] **U6 - Review and browser verification**
+- [x] **U6 - Review and browser verification**
   - **Goal:** satisfy LFG's review/test lane before final handoff.
   - **Files:** all changed files.
   - **Approach:** run a code/doc review pass in autofix/headless spirit,
@@ -238,6 +238,9 @@ flowchart TB
   - **Verification:** review has no blocking residuals, automated checks are
     reported, and browser/runtime verification is either passed or precisely
     blocked.
+  - **Result:** automated checks passed; `agent-browser` was not installed, so
+    browser automation was blocked and the successful Next build route render
+    was used as runtime smoke proof.
 
 ## System-Wide Impact
 
