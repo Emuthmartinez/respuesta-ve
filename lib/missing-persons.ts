@@ -131,8 +131,12 @@ export function nameBlockKey(name: string | null | undefined): string {
 export function blockKeys(r: MatchableRecord): string[] {
   const keys: string[] = [];
   if (r.cedulaNorm) keys.push(`ced:${r.cedulaNorm}`);
-  const nb = nameBlockKey(r.displayName);
-  if (nb) keys.push(`nm:${nb}`);
+  // Pair the given name with EACH other token, so "Andrés Poleo" and "Andrés
+  // Eduardo Poleo Mundaraín" still meet (via andres|poleo) despite different
+  // last tokens — the scorer then decides; this only widens candidate recall.
+  const toks = tokenize(norm(r.displayName)).map(spanishPhonetic);
+  if (toks.length === 1) keys.push(`nm:${toks[0]}`);
+  else for (let i = 1; i < toks.length; i++) keys.push(`nm:${toks[0]}|${toks[i]}`);
   if (r.photoPhash && r.photoPhash.length >= 3) keys.push(`ph:${r.photoPhash.slice(0, 3)}`);
   return keys;
 }
@@ -184,17 +188,29 @@ const phoneticSet = (s: string): Set<string> => new Set(tokenize(norm(s)).map(sp
 // a shared DISTINCTIVE token ("Poleo", "Rujano") is strong. This is IDF
 // weighting reduced to a static list (so the scorer stays pure/dependency-free).
 const COMMON_NAME_RAW = [
-  // given names
+  // given names (incl. common compound second-names like "José GREGORIO",
+  // "Julio CÉSAR", "María EUGENIA" — these are NOT identity-bearing surnames).
   'maria', 'jose', 'juan', 'carlos', 'luis', 'ana', 'jesus', 'pedro', 'miguel', 'rafael',
   'francisco', 'antonio', 'manuel', 'pablo', 'daniel', 'david', 'angel', 'victor', 'jorge',
-  'gabriel', 'andres', 'eduardo', 'fernando', 'ricardo', 'alberto', 'jose', 'alejandro',
+  'gabriel', 'andres', 'eduardo', 'fernando', 'ricardo', 'alberto', 'alejandro', 'gregorio',
+  'cesar', 'enrique', 'ramon', 'ernesto', 'javier', 'sebastian', 'santiago', 'oscar', 'hector',
+  'gustavo', 'raul', 'julio', 'mario', 'ruben', 'armando', 'wilmer', 'yorman', 'yoendi',
+  'leonardo', 'diego', 'adrian', 'ivan', 'omar', 'moises', 'samuel', 'felix', 'simon', 'jhon',
+  'jhonny', 'richard', 'freddy', 'douglas', 'franklin', 'gregori', 'alexis', 'wilfredo',
+  'adolfo', 'dario', 'alfonso', 'alfonzo', 'augusto', 'alfredo', 'ignacio', 'vicente', 'emilio',
   'fernanda', 'gabriela', 'andrea', 'valentina', 'camila', 'sofia', 'isabella', 'daniela',
-  'victoria', 'carmen', 'rosa', 'elena', 'teresa', 'jesus', 'yorman', 'yoendi',
+  'victoria', 'carmen', 'rosa', 'elena', 'teresa', 'laura', 'eugenia', 'alejandra', 'beatriz',
+  'mercedes', 'milagros', 'coromoto', 'chiquinquira', 'josefina', 'yajaira', 'oriana', 'genesis',
+  'andreina', 'carolina', 'paola', 'patricia', 'veronica', 'isabel', 'cristina', 'claudia',
+  'monica', 'mariangel', 'michelle', 'yelitza', 'yusmary', 'deisy', 'karina', 'nancy', 'gladys',
+  'angeles', 'valle', 'del', 'los', 'jose', 'maria',
   // surnames
   'gonzalez', 'rodriguez', 'perez', 'garcia', 'martinez', 'hernandez', 'lopez', 'sanchez',
   'ramirez', 'torres', 'flores', 'rivas', 'diaz', 'silva', 'mora', 'rojas', 'gomez', 'vargas',
   'castro', 'ramos', 'romero', 'suarez', 'blanco', 'marquez', 'guerra', 'medina', 'salazar',
   'fernandez', 'gimenez', 'jimenez', 'moreno', 'reyes', 'gutierrez', 'ortiz', 'rivero',
+  'aponte', 'mendoza', 'contreras', 'guevara', 'herrera', 'parra', 'rondon', 'bravo', 'leon',
+  'marin', 'salas', 'navarro', 'pacheco', 'quintero', 'rangel', 'bermudez', 'mejias', 'graterol',
 ];
 const COMMON_NAME_TOKENS = new Set(COMMON_NAME_RAW.map(spanishPhonetic));
 
@@ -231,6 +247,7 @@ export function firstPhoneticToken(name: string): string {
   return tokenize(norm(name)).map(spanishPhonetic)[0] ?? '';
 }
 
+
 /** Hamming distance (0–64) between two 16-hex-char dHash fingerprints. */
 export function hammingHex(a: string | null | undefined, b: string | null | undefined): number {
   if (!a || !b || a.length !== b.length) return 64;
@@ -242,8 +259,10 @@ export function hammingHex(a: string | null | undefined, b: string | null | unde
   return dist;
 }
 
-/** Two photos are "the same image" when their dHashes are within this many bits. */
-export const PHOTO_HAMMING_STRONG = 10;
+/** Two photos are "the same image" when their dHashes are within this many bits.
+ * Tight (≈recompression noise) — ID-style headshots collide easily, so a loose
+ * threshold would falsely bridge different people who share a common given name. */
+export const PHOTO_HAMMING_STRONG = 8;
 
 // ─────────────────────────────────────────────────────────────────────────
 // Multi-signal scoring
@@ -339,8 +358,14 @@ export function scoreRecords(a: MatchableRecord, b: MatchableRecord): MatchResul
   // different names is a GROUP photo (a family snapshot reused across each
   // member's report) → surface for review, never a silent merge.
   if (photoStrong) {
+    // ID-style headshot dHashes collide between different people, so a photo
+    // match alone is NOT proof of identity. It CONFIRMS only when it corroborates
+    // a name — the given name agrees AND a distinctive token is shared (this still
+    // rescues "Nerio" → "Nerio Arias", which name-fuzzy alone misses on 1 token).
+    // Otherwise the photo is surfaced for review, never used to merge.
     const givenAgree = bothNamed && firstPhoneticToken(a.displayName ?? '') === firstPhoneticToken(b.displayName ?? '');
-    if (givenAgree) {
+    const nameCorroborates = distinctiveSharedCount(a.displayName ?? '', b.displayName ?? '') > 0;
+    if (givenAgree && nameCorroborates) {
       return { related: true, score: 0.95, method: 'photo', confidence: 'confirmed', reason: ['photo'] };
     }
     return { related: true, score: 0.7, method: 'photo_conflict', confidence: 'review', reason: ['photo'] };
@@ -361,11 +386,12 @@ export function scoreRecords(a: MatchableRecord, b: MatchableRecord): MatchResul
   // Given names must agree: two people sharing only a surname ("Ángel Gavidia"
   // vs "Aris Gavidia") are family, NOT the same person.
   if (firstPhoneticToken(na) !== firstPhoneticToken(nb)) return none('fuzzy');
-  // Common-name guard: with NO distinctive shared token ("María Rodríguez"
-  // only), require strong corroboration — close age AND same municipio — before
-  // grouping. A distinctive shared token ("Poleo") needs no such crutch. This is
-  // what stops a bare common name from chaining dozens of different people.
-  if (distinctiveSharedCount(na, nb) === 0 && !(ageClose && sameMuni)) return none('fuzzy');
+  // Common-name guard: a fuzzy merge REQUIRES at least one distinctive shared
+  // token ("Poleo", "Rujano"). Sharing only common tokens — even a compound
+  // given name like "José Gregorio" or a "María Rodríguez" — is not enough; that
+  // path needs a photo or cédula to merge. This is what stops a common name from
+  // chaining dozens of different people into one cluster.
+  if (distinctiveSharedCount(na, nb) === 0) return none('fuzzy');
 
   let score = weightedNameSimilarity(na, nb);
   if (score < NAME_FLOOR) return none('fuzzy');

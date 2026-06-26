@@ -186,24 +186,24 @@ function ClusterCard({ cluster, s }: { cluster: Cluster; s: Strings }) {
       {multi && (
         <div className="mt-3 space-y-2 border-t border-black/5 pt-3 dark:border-white/5">
           {shown.map((r) => (
-            <div key={r.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
-              <span className="text-zinc-700 dark:text-zinc-300">
+            <div key={r.id} className="text-sm">
+              <div className="font-medium text-zinc-700 dark:text-zinc-300">
                 {cleanName(r.display_name)}
-                {r.age_estimate != null && <span className="text-zinc-400"> · ~{r.age_estimate}</span>}
-              </span>
-              <span className="flex items-center gap-2 text-xs">
-                <span className={`rounded-full px-1.5 py-0.5 ${statusColor[r.status] ?? statusColor.unknown}`}>
+                {r.age_estimate != null && <span className="font-normal text-zinc-400"> · ~{r.age_estimate}</span>}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                <span className={`shrink-0 rounded-full px-1.5 py-0.5 ${statusColor[r.status] ?? statusColor.unknown}`}>
                   {s.statusLabel[r.status] ?? r.status}
                 </span>
-                <span className="rounded bg-black/5 px-1.5 py-0.5 text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                <span className="shrink-0 rounded bg-black/5 px-1.5 py-0.5 text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
                   {SOURCE_LABEL[r.source] ?? r.source}
                 </span>
                 {r.external_url && (
-                  <a href={r.external_url} target="_blank" rel="noopener noreferrer" className="font-medium text-red-600 hover:underline">
+                  <a href={r.external_url} target="_blank" rel="noopener noreferrer" className="shrink-0 font-medium text-red-600 hover:underline">
                     {s.viewAt}
                   </a>
                 )}
-              </span>
+              </div>
             </div>
           ))}
           {members.length > CAP && (

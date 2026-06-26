@@ -37,12 +37,28 @@ const ESTADO_KEYS = [
   ['Aragua', /aragua|maracay|la victoria|cagua|turmero|el limon|choron/i],
   ['Lara', /\blara\b|barquisimeto|carora|el tocuyo/i],
 ];
+// Strip a cédula/phone a family typed into the name or location free-text. The
+// cédula is extracted first (→ cedulaNorm); we never display the raw number.
+function scrubPII(text) {
+  if (!text) return text;
+  return text
+    .replace(/\b(?:c\.?\s?i\.?|c[eé]dula|ci)\s*:?\s*[VvEe]?[-.\s]?\d[\d.\s]{5,9}/gi, ' ')
+    .replace(/\b[VvEe][-.\s]?\d{6,8}\b/g, ' ')
+    .replace(/\b\d{6,9}\b/g, ' ')
+    .replace(/\s{2,}/g, ' ').replace(/[,\s]+$/, '').trim();
+}
+function cleanName(name) {
+  const c = scrubPII(name);
+  return c || null;
+}
 function parseLocation(ubic) {
   if (!ubic) return { estado: null, municipio: null };
   const u = ubic.trim();
   let estado = null;
   for (const [name, re] of ESTADO_KEYS) if (re.test(u)) { estado = name; break; }
-  return { estado, municipio: u.slice(0, 80) || null };
+  // a "location" that is just a cédula/chat-paste is not a location
+  if (/^\s*[VvEe]?\s*-?\s*\d{6,9}\s*$/.test(u) || /\[\d{1,2}[:/]/.test(u)) return { estado, municipio: null };
+  return { estado, municipio: scrubPII(u).slice(0, 80) || null };
 }
 function sanitize(text) {
   if (!text) return null;
@@ -73,13 +89,14 @@ const recs = raw.map((r) => {
   const { estado, municipio } = parseLocation(r.ubicacion);
   const name = (r.nombre || '').trim();
   const cedulaNorm = extractCedula(`${name} ${r.descripcion || ''}`);
+  const display = cleanName(name); // cédula/phone scrubbed (extracted above)
   return {
     localId: crypto.randomUUID(), origId: r.id,
-    displayName: name || null, age: Number.isFinite(r.edad) ? r.edad : null,
+    displayName: display, age: Number.isFinite(r.edad) ? r.edad : null,
     estado, municipio, status: mapStatus(r.estado), notes: sanitize(r.descripcion),
     lastSeenAt: r.fecha || null, cedula: cedulaNorm, cedulaNorm,
     photoPhash: phashMap.get(r.id) || null, isMultiPerson: detectMultiPerson(name),
-    namePhonetic: nameBlockKey(name),
+    namePhonetic: nameBlockKey(display || name),
   };
 });
 
