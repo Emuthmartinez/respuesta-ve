@@ -39,6 +39,10 @@ const STR = {
     centrosDesc: 'Aprueba centros de acopio pendientes y organizaciones sugeridas.',
     intercambioLink: 'Mesa de habilidades →',
     intercambioDesc: 'Verifica credenciales y conecta voluntarios con quienes los necesitan.',
+    personasLink: 'Deduplicación de personas →',
+    personasDesc: 'Fusiona o separa registros de “posible misma persona”; revisa conflictos.',
+    apiKeysLink: 'Claves de API →',
+    apiKeysDesc: 'Emite y revoca claves para socios y agentes que usan la API de deduplicación.',
   },
   en: {
     heading: 'Volunteers & responders',
@@ -70,6 +74,10 @@ const STR = {
     centrosDesc: 'Approve pending collection centers and suggested organizations.',
     intercambioLink: 'Skills desk →',
     intercambioDesc: 'Verify credentials and connect volunteers with those who need them.',
+    personasLink: 'People deduplication →',
+    personasDesc: 'Merge or split “possibly the same person” records; review conflicts.',
+    apiKeysLink: 'API keys →',
+    apiKeysDesc: 'Issue and revoke keys for partners and agents using the dedup API.',
   },
 } as const;
 
@@ -202,6 +210,14 @@ export default async function VoluntariosPage() {
                   <Link href="/voluntarios/intercambio" className="block rounded-lg border border-black/10 p-4 hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5">
                     <div className="font-medium">{s.intercambioLink}</div>
                     <div className="text-sm text-zinc-500">{s.intercambioDesc}</div>
+                  </Link>
+                  <Link href="/voluntarios/personas" className="block rounded-lg border border-black/10 p-4 hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5">
+                    <div className="font-medium">{s.personasLink}</div>
+                    <div className="text-sm text-zinc-500">{s.personasDesc}</div>
+                  </Link>
+                  <Link href="/voluntarios/api-keys" className="block rounded-lg border border-black/10 p-4 hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5">
+                    <div className="font-medium">{s.apiKeysLink}</div>
+                    <div className="text-sm text-zinc-500">{s.apiKeysDesc}</div>
                   </Link>
                 </>
               ) : null}
