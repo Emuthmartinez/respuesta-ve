@@ -2,7 +2,42 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
-import { SKILL_LABEL, HIGH_STAKES, URGENCY_OPTS } from '@/lib/skills';
+import { skillLabel, HIGH_STAKES, URGENCY_OPTS } from '@/lib/skills';
+import { tr } from '@/lib/i18n';
+import { useLocale } from '@/lib/locale-context';
+
+const STR = {
+  es: {
+    loading: 'Cargando solicitudes…',
+    emptyTitle: 'Sin solicitudes abiertas',
+    emptyDesc: 'Las solicitudes aprobadas y vigentes aparecen aquí.',
+    countSingular: 'solicitud',
+    countPlural: 'solicitudes',
+    selectToSeeVolunteers: '— selecciona una para ver voluntarios compatibles',
+    locationUnspecified: 'Ubicación no especificada',
+    personSingular: 'persona',
+    personPlural: 'personas',
+    minors: 'menores de edad',
+    privateContact: 'Contacto privado:',
+    selectedNote: 'Seleccionada — ver voluntarios abajo ↓',
+    altoRiesgo: 'ALTO RIESGO',
+  },
+  en: {
+    loading: 'Loading requests…',
+    emptyTitle: 'No open requests',
+    emptyDesc: 'Approved and active requests appear here.',
+    countSingular: 'request',
+    countPlural: 'requests',
+    selectToSeeVolunteers: '— select one to see compatible volunteers',
+    locationUnspecified: 'Location not specified',
+    personSingular: 'person',
+    personPlural: 'people',
+    minors: 'minor children',
+    privateContact: 'Private contact:',
+    selectedNote: 'Selected — see volunteers below ↓',
+    altoRiesgo: 'HIGH-STAKES',
+  },
+} as const;
 
 interface OpenRequest {
   id: string;
@@ -25,10 +60,6 @@ const URGENCY_COLOR: Record<string, string> = {
   low: '#16a34a',
 };
 
-const URGENCY_LABEL: Record<string, string> = Object.fromEntries(
-  URGENCY_OPTS.map((u) => [u.value, u.label.es]),
-);
-
 const SELECT =
   'id,skill_needed,urgency,estado,municipio,description,contact_private,num_people,has_minor_children,expires_at,created_at';
 
@@ -38,6 +69,8 @@ interface Props {
 }
 
 export function HelpRequestList({ selectedId, onSelect }: Props) {
+  const locale = useLocale();
+  const s = STR[locale];
   const [rows, setRows] = useState<OpenRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
@@ -65,7 +98,7 @@ export function HelpRequestList({ selectedId, onSelect }: Props) {
     return (
       <div className="flex items-center gap-2 py-4 text-sm text-zinc-500">
         <span className="inline-block size-4 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" aria-hidden="true" />
-        Cargando solicitudes…
+        {s.loading}
       </div>
     );
   }
@@ -81,13 +114,13 @@ export function HelpRequestList({ selectedId, onSelect }: Props) {
       {rows.length === 0 ? (
         <div className="rounded-lg border border-black/10 px-4 py-8 text-center dark:border-white/10">
           <p className="text-2xl" aria-hidden="true">—</p>
-          <p className="mt-1 text-sm font-medium text-zinc-600 dark:text-zinc-400">Sin solicitudes abiertas</p>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">Las solicitudes aprobadas y vigentes aparecen aquí.</p>
+          <p className="mt-1 text-sm font-medium text-zinc-600 dark:text-zinc-400">{s.emptyTitle}</p>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">{s.emptyDesc}</p>
         </div>
       ) : (
         <>
           <p className="text-xs text-zinc-500">
-            {rows.length} solicitud{rows.length !== 1 ? 'es' : ''} — selecciona una para ver voluntarios compatibles
+            {rows.length} {rows.length !== 1 ? s.countPlural : s.countSingular}{s.selectToSeeVolunteers}
           </p>
           {rows.map((r) => {
             const isSelected = selectedId === r.id;
@@ -116,25 +149,27 @@ export function HelpRequestList({ selectedId, onSelect }: Props) {
                         aria-hidden="true"
                       />
                       <span className="font-medium text-sm">
-                        {SKILL_LABEL[r.skill_needed]?.es ?? r.skill_needed}
+                        {skillLabel(r.skill_needed, locale)}
                       </span>
                       {isHigh && (
                         <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-300">
-                          ALTO RIESGO
+                          {s.altoRiesgo}
                         </span>
                       )}
                     </div>
                     <div className="mt-0.5 text-xs text-zinc-500">
-                      {[r.municipio, r.estado].filter(Boolean).join(', ') || 'Ubicación no especificada'}
-                      {r.num_people ? ` · ${r.num_people} persona${r.num_people !== 1 ? 's' : ''}` : ''}
-                      {r.has_minor_children ? ' · menores de edad' : ''}
+                      {[r.municipio, r.estado].filter(Boolean).join(', ') || s.locationUnspecified}
+                      {r.num_people
+                        ? ` · ${r.num_people} ${r.num_people !== 1 ? s.personPlural : s.personSingular}`
+                        : ''}
+                      {r.has_minor_children ? ` · ${s.minors}` : ''}
                     </div>
                   </div>
                   <span
                     className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
                     style={{ backgroundColor: URGENCY_COLOR[r.urgency] ?? '#777' }}
                   >
-                    {URGENCY_LABEL[r.urgency] ?? r.urgency}
+                    {tr(URGENCY_OPTS.find((u) => u.value === r.urgency)?.label ?? { es: r.urgency, en: r.urgency }, locale)}
                   </span>
                 </div>
                 {r.description && (
@@ -145,12 +180,12 @@ export function HelpRequestList({ selectedId, onSelect }: Props) {
                 {/* Private contact visible to coordinator only via RLS */}
                 {r.contact_private && (
                   <p className="mt-1.5 rounded bg-zinc-100 px-2 py-1 text-xs font-mono text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                    Contacto privado: {r.contact_private}
+                    {s.privateContact} {r.contact_private}
                   </p>
                 )}
                 {isSelected && (
                   <p className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">
-                    Seleccionada — ver voluntarios abajo ↓
+                    {s.selectedNote}
                   </p>
                 )}
               </button>

@@ -200,7 +200,7 @@ export function EligibleOffersList({ requestId, skillNeeded, isHighStakes }: Pro
       p_reason: reason,
     });
     if (error) { setMsg(error.message); return; }
-    if (data === false) { setMsg('Sin permiso de coordinador.'); return; }
+    if (data === false) { setMsg(s.noPermission); return; }
     await load(true);
   }
 
@@ -208,7 +208,7 @@ export function EligibleOffersList({ requestId, skillNeeded, isHighStakes }: Pro
     return (
       <div className="flex items-center gap-2 py-4 text-sm text-zinc-500">
         <span className="inline-block size-4 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" aria-hidden="true" />
-        Buscando voluntarios compatibles…
+        {s.loading}
       </div>
     );
   }
@@ -223,30 +223,30 @@ export function EligibleOffersList({ requestId, skillNeeded, isHighStakes }: Pro
       >
         {connectConfirm && (
           <div>
-            <p className="text-sm font-semibold">Conectar voluntario con esta solicitud?</p>
+            <p className="text-sm font-semibold">{s.connectConfirmTitle}</p>
             <p className="mt-1 text-xs text-zinc-500">
-              Habilidad: <strong>{connectConfirm.label}</strong>
+              {s.skill} <strong>{connectConfirm.label}</strong>
             </p>
             {isHighStakes && (
               <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                Habilidad de alto riesgo. Confirma que has verificado la credencial.
+                {s.highStakesNote}
               </p>
             )}
             {notes && (
-              <p className="mt-1 text-xs text-zinc-400 italic">Nota: {notes}</p>
+              <p className="mt-1 text-xs text-zinc-400 italic">{s.noteLabel} {notes}</p>
             )}
             <div className="mt-4 flex gap-2">
               <button
                 onClick={executeConnect}
                 className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
               >
-                Sí, conectar
+                {s.yesConnect}
               </button>
               <button
                 onClick={() => setConnectConfirm(null)}
                 className="rounded-full border border-black/15 px-4 py-1.5 text-xs dark:border-white/20"
               >
-                Cancelar
+                {s.cancel}
               </button>
             </div>
           </div>
@@ -262,41 +262,40 @@ export function EligibleOffersList({ requestId, skillNeeded, isHighStakes }: Pro
       {refreshing && (
         <p className="flex items-center gap-1.5 text-xs text-zinc-400">
           <span className="inline-block size-3 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-500" aria-hidden="true" />
-          Actualizando…
+          {s.refreshing}
         </p>
       )}
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-black/10 px-4 py-8 text-center dark:border-white/10">
           <p className="text-2xl" aria-hidden="true">—</p>
-          <p className="mt-1 text-sm font-medium text-zinc-600 dark:text-zinc-400">Sin voluntarios disponibles</p>
+          <p className="mt-1 text-sm font-medium text-zinc-600 dark:text-zinc-400">{s.emptyTitle}</p>
           <p className="text-xs text-zinc-400 dark:text-zinc-500">
-            No hay voluntarios aprobados disponibles para esta habilidad
-            {isHighStakes ? ' con credencial verificada' : ''}.
+            {s.emptyDescBase}{isHighStakes ? s.emptyDescHighStakes : ''}.
           </p>
         </div>
       ) : (
         <>
           <div>
             <label htmlFor="coordinator-notes" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-              Nota del coordinador (opcional — para el registro interno)
+              {s.notesLabel}
             </label>
             <textarea
               id="coordinator-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              placeholder="Contexto de la conexión, próximos pasos, etc."
+              placeholder={s.notesPlaceholder}
               className="w-full rounded-md border border-black/15 bg-transparent px-3 py-2 text-sm dark:border-white/20"
             />
           </div>
 
           <p className="text-xs text-zinc-500">
-            {rows.length} voluntario{rows.length !== 1 ? 's' : ''} compatible{rows.length !== 1 ? 's' : ''}
+            {s.countText(rows.length)}
           </p>
 
           {rows.map((o) => {
-            const skillLabel = SKILL_LABEL[o.skill_category]?.es ?? o.skill_category;
+            const offerSkillLabel = skillLabel(o.skill_category, locale);
             return (
               <div
                 key={o.id}
@@ -307,20 +306,20 @@ export function EligibleOffersList({ requestId, skillNeeded, isHighStakes }: Pro
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-sm">{skillLabel}</span>
+                      <span className="font-medium text-sm">{offerSkillLabel}</span>
                       {o.credential_verified ? (
                         <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] text-green-800 dark:bg-green-950/50 dark:text-green-300">
-                          Credencial verificada
+                          {s.credVerified}
                         </span>
                       ) : (
                         <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                          Sin verificar
+                          {s.unverified}
                         </span>
                       )}
                     </div>
                     <div className="mt-0.5 text-xs text-zinc-500">
                       {[o.estado, ...(o.operating_estados ?? [])].filter(Boolean).join(', ') ||
-                        'Estado no especificado'}
+                        s.stateUnspecified}
                       {o.languages?.length ? ` · ${o.languages.join(', ')}` : ''}
                     </div>
                     {o.skill_detail && (
@@ -328,14 +327,14 @@ export function EligibleOffersList({ requestId, skillNeeded, isHighStakes }: Pro
                     )}
                   </div>
                   <span className="text-xs text-zinc-500 shrink-0">
-                    {new Date(o.created_at).toLocaleDateString('es-VE')}
+                    {new Date(o.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-VE')}
                   </span>
                 </div>
 
                 {/* Private contact — for coordinator to introduce parties via RLS */}
                 {o.contact_private && (
                   <p className="mt-2 rounded bg-zinc-100 px-2 py-1 text-xs font-mono text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                    Contacto privado: {o.contact_private}
+                    {s.privateContact} {o.contact_private}
                   </p>
                 )}
 
@@ -343,12 +342,12 @@ export function EligibleOffersList({ requestId, skillNeeded, isHighStakes }: Pro
                   {/* Main actions row */}
                   <div className="flex flex-wrap gap-2">
                     <button
-                      onClick={() => promptConnect(o.id, skillLabel)}
+                      onClick={() => promptConnect(o.id, offerSkillLabel)}
                       disabled={busy === o.id}
-                      aria-label={`Conectar voluntario con habilidad ${skillLabel}`}
+                      aria-label={s.ariaConnect(offerSkillLabel)}
                       className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
                     >
-                      {busy === o.id ? 'Conectando…' : 'Conectar'}
+                      {busy === o.id ? s.connecting : s.connect}
                     </button>
                     {suspendState?.id !== o.id && (
                       <button
@@ -356,7 +355,7 @@ export function EligibleOffersList({ requestId, skillNeeded, isHighStakes }: Pro
                         disabled={busy === o.id}
                         className="rounded-full border border-black/15 px-4 py-1.5 text-xs hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/5 disabled:opacity-50"
                       >
-                        Suspender
+                        {s.suspend}
                       </button>
                     )}
                   </div>
@@ -368,8 +367,8 @@ export function EligibleOffersList({ requestId, skillNeeded, isHighStakes }: Pro
                         type="text"
                         value={suspendState.reason}
                         onChange={(e) => setSuspendState({ id: o.id, reason: e.target.value })}
-                        placeholder="Motivo de suspensión"
-                        aria-label="Motivo de suspensión"
+                        placeholder={s.suspensionReason}
+                        aria-label={s.suspensionReason}
                         className="min-w-0 flex-1 rounded-md border border-black/15 bg-transparent px-2 py-1 text-xs dark:border-white/20"
                         autoFocus
                         onKeyDown={(e) => {
@@ -382,13 +381,13 @@ export function EligibleOffersList({ requestId, skillNeeded, isHighStakes }: Pro
                         disabled={!suspendState.reason.trim()}
                         className="shrink-0 rounded-full bg-zinc-700 px-3 py-1 text-xs font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
                       >
-                        Confirmar
+                        {s.confirm}
                       </button>
                       <button
                         onClick={() => setSuspendState(null)}
                         className="shrink-0 rounded-full border border-black/15 px-3 py-1 text-xs dark:border-white/20"
                       >
-                        Cancelar
+                        {s.cancel}
                       </button>
                     </div>
                   )}
