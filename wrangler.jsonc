@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "respuesta-ve",
+  "account_id": "0bcd21d35be69f09844d80446bc55e69",
+  "main": ".open-next/worker.js",
+  "workers_dev": true,
+  "compatibility_date": "2025-03-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    { "pattern": "respuestave.org", "custom_domain": true },
+    { "pattern": "www.respuestave.org", "custom_domain": true },
+    { "pattern": "respondeve.org", "custom_domain": true },
+    { "pattern": "terremotovenezuela.org", "custom_domain": true }
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

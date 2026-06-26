@@ -1,0 +1,24 @@
+# Respuesta VE
+
+> Plataforma comunitaria de coordinación humanitaria creada tras el terremoto en Venezuela de junio de 2026. Permite reportar edificios dañados, solicitar inspecciones estructurales, donar (dinero o bienes), conectar voluntarios con damnificados (intercambio de habilidades), buscar personas desaparecidas e identificar desinformación. Plataforma independiente, sin fines de lucro, sin afiliación gubernamental.
+
+## Páginas principales
+
+- [Inicio — Mapa de daños](https://respuesta-ve.e-muth-martinez.workers.dev/): Mapa interactivo de edificios dañados en Venezuela. Los reportes pasan por moderación antes de publicarse. Las ubicaciones se muestran aproximadas (~110 m) por privacidad.
+- [Reportar daño estructural](https://respuesta-ve.e-muth-martinez.workers.dev/reportar): Formulario para reportar un edificio dañado o en riesgo de colapso tras el sismo.
+- [Solicitar inspección](https://respuesta-ve.e-muth-martinez.workers.dev/solicitar-inspeccion): Pedir que un ingeniero con credenciales evalúe si un edificio es seguro (dictamen tipo ATC-20: verde/amarillo/rojo).
+- [Ayuda desde el exterior](https://respuesta-ve.e-muth-martinez.workers.dev/afuera): Organizaciones verificadas para donar dinero, centros de acopio para donar bienes en persona (ordenados por cercanía), y plataformas para buscar personas.
+- [Intercambio de ayuda](https://respuesta-ve.e-muth-martinez.workers.dev/intercambio): Mercado de ayuda mutua — voluntarios ofrecen habilidades (ingenieros, médicos, traductores, etc.), familias publican necesidades. El contacto es privado y mediado por un coordinador.
+- [Recursos de emergencia](https://respuesta-ve.e-muth-martinez.workers.dev/recursos): Números de emergencia (171, 911, 112, *1), búsqueda de personas, salud mental e inspección de estructuras.
+- [Buscar personas](https://respuesta-ve.e-muth-martinez.workers.dev/personas): Enlaces a registros de personas desaparecidas (federación con sitios existentes, no un registro propio).
+- [Voluntarios](https://respuesta-ve.e-muth-martinez.workers.dev/voluntarios): Registro y verificación de credenciales para responders (ingenieros, médicos, rescate, etc.).
+
+## Datos clave
+
+- Evento: terremotos gemelos en Venezuela, 24-25 de junio de 2026 (estados más afectados: La Guaira, Distrito Capital/Caracas, Miranda, Aragua, Carabobo, Trujillo, Falcón).
+- Modelo de seguridad: toda contribución de la comunidad pasa por una moderación ("pendiente → aprobado") antes de ser pública; las ubicaciones precisas solo las ven responders verificados.
+- Antifraude: la plataforma advierte sobre estafas de donación. Nunca donar por transferencia a cuentas personales, tarjetas de regalo ni criptomonedas.
+
+## Aviso
+
+Esta es una herramienta de coordinación comunitaria, no una autoridad oficial ni una certificación estructural. Ante una emergencia, llamar al 171 y seguir las instrucciones de Protección Civil y Bomberos.
