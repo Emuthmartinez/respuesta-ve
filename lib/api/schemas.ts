@@ -19,7 +19,10 @@ export const PersonInput = z.object({
   /** Optional precomputed 16-hex dHash of the person's photo (we don't fetch photos). */
   photoPhash: z.string().trim().regex(/^[0-9a-fA-F]{16}$/, 'photoPhash must be 16 hex chars').nullish(),
   status: z.enum(MISSING_STATUSES).nullish(),
+  /** When the person was last seen; do not use this as the sync clock. */
   lastSeenAt: z.string().trim().max(40).nullish(),
+  /** Source-system update timestamp. Existing rows only change status when this is newer. */
+  sourceUpdatedAt: z.string().trim().max(40).nullish(),
 }).strict();
 export type PersonInputT = z.infer<typeof PersonInput>;
 
@@ -55,6 +58,15 @@ export const IngestRequest = z.object({
   externalId: str(200),                 // partner's stable id (idempotent upsert key)
   externalUrl: z.url().max(500),  // link back to the source record — REQUIRED
   source: z.enum(['venezuelatebusca', 'desaparecidosterremotovenezuela', 'desaparecidosvenezuela', 'pfif_feed', 'other']).default('other'),
+}).strict();
+
+export const StatusQuery = z.object({
+  externalId: str(200),
+}).strict();
+
+export const ChangesQuery = z.object({
+  since: z.string().trim().min(1).max(80),
+  limit: z.number().int().min(1).max(500).default(100),
 }).strict();
 
 /** Build a stable z error → flat message list. */

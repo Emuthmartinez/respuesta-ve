@@ -10,9 +10,9 @@ land or re-scope an item. Architecture lives in
 
 Deployed to Cloudflare Workers (`respuesta-ve`), serving respuestave.org +
 respondeve.org + terremotovenezuela.org + `*.workers.dev`. DB migrations through
-`0023`. (The ownership/retraction feature is `0018`, `0019`, `0023`; the
+`0027`. (The ownership/retraction feature is `0018`, `0019`, `0023`; the
 partner-API + coordinator dedup-desk feature landed concurrently as
-`0020`–`0022`.)
+`0020`–`0022`; the partner status/sync API is `0026`–`0027`.)
 
 - Public **damage map** (lazy-loaded + 3G list view), anonymous **report form**,
   drag-to-confirm **provisional placement**, density layers.
@@ -28,9 +28,10 @@ partner-API + coordinator dedup-desk feature landed concurrently as
 - **Universal management-token ownership + soft-retraction** across every
   citizen-creatable entity, with life-safety guards and a coordinator
   retraction-confirmation queue. (`0018`, `0019`, `0023`; see AGENTS.md.)
-- **Partner API** (`/api/v1/*` dedup/matching + OpenAPI), a public Developer API
-  page, API-key management (`/voluntarios/api-keys`), and a standalone
-  `mcp-server/` — landed concurrently (`0020`–`0022`).
+- **Partner API** (`/api/v1/*` dedup/matching/status sync + OpenAPI), a public
+  Developer API page, API-key management (`/voluntarios/api-keys`), and a
+  standalone `mcp-server/` — landed concurrently (`0020`–`0022`, status/sync in
+  `0026`–`0027`).
 - **Coordinator missing-person dedup desk** (`MissingDedupDesk`): review
   clusters, merge/split/undo, and a cédula/photo **conflict review queue**
   (`coord_missing_clusters` / `coord_missing_conflicts`, `0022`).

@@ -56,5 +56,7 @@ export interface MissingPinPublic {
   cluster_size: number;
   is_multi_person: boolean;
   last_seen_at: string | null;
+  source_updated_at: string | null;
   created_at: string;
+  updated_at: string;
 }

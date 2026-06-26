@@ -11,8 +11,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { scoreRecords, normalizeName, type MatchableRecord } from '@/lib/missing-persons';
 import { redact, type MatchOut, type PublicRow } from '@/lib/api/redact';
 
-const PUBLIC_SELECT =
-  'id, display_name, estado, municipio, status, source, external_url, age_estimate, cedula_confirmed, cluster_id, cluster_size, is_multi_person, last_seen_at';
+export const PUBLIC_SELECT =
+  'id, display_name, estado, municipio, status, source, external_url, age_estimate, cedula_confirmed, cluster_id, cluster_size, is_multi_person, last_seen_at, source_updated_at, updated_at';
 
 /** Pure one-to-many scoring (no DB). Returns related candidates, ranked. */
 export function scoreAgainst(
@@ -81,5 +81,19 @@ export async function searchIndex(
   if (opts.q) query = query.ilike('display_name', `%${opts.q.replace(/[%,()]/g, '')}%`);
   if (opts.estado) query = query.eq('estado', opts.estado);
   const { data } = await query.order('cluster_size', { ascending: false }).limit(opts.limit);
+  return ((data as PublicRow[]) ?? []).map(redact);
+}
+
+/** Public sync feed for partners polling records changed since their last run. */
+export async function changedSince(
+  sb: SupabaseClient,
+  opts: { since: string; limit: number },
+): Promise<ReturnType<typeof redact>[]> {
+  const { data } = await sb
+    .from('missing_person_pins_public')
+    .select(PUBLIC_SELECT)
+    .gt('updated_at', opts.since)
+    .order('updated_at', { ascending: true })
+    .limit(opts.limit);
   return ((data as PublicRow[]) ?? []).map(redact);
 }

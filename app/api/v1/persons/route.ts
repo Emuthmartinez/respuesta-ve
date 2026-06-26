@@ -61,14 +61,14 @@ export async function POST(req: NextRequest) {
     p_display_name: record.name,
     p_last_seen_lat: null,
     p_last_seen_lng: null,
-    p_last_seen_at: null,
+    p_last_seen_at: record.lastSeenAt ?? null,
     p_estado: record.estado ?? null,
     p_municipio: record.municipio ?? null,
     p_age_estimate: record.age ?? null,
     p_cedula: record.cedula ?? null,
     p_status: record.status ?? 'missing',
     p_notes: null,
-    p_source_updated_at: record.lastSeenAt ?? null,
+    p_source_updated_at: record.sourceUpdatedAt ?? record.lastSeenAt ?? null,
     p_possible_duplicate_ids: dupIds.length ? dupIds : null,
     p_dedupe_score: matches[0]?.score ?? null,
     p_cedula_normalized: matchable.cedulaNorm,
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 
   const r = data as {
     ok?: boolean; id?: string; action?: string; error?: string;
-    quality_status?: string; quality_flags?: string[];
+    quality_status?: string; quality_flags?: string[]; identifier_matches?: number;
   } | null;
   if (error || !r?.ok) {
     return apiError(r?.error ?? 'ingest_failed', 502);
@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
     action: r.action,
     qualityStatus: r.quality_status ?? quality.status,
     qualityFlags: r.quality_flags ?? quality.flags,
+    identifierMatches: r.identifier_matches ?? 0,
     possibleMatches: matches,
     matchCount: matches.length,
   }, auth, status);

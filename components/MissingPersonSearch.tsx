@@ -10,7 +10,7 @@ import type { MissingPinPublic, MissingStatus } from '@/lib/types';
 import type { Locale } from '@/lib/i18n';
 
 const SELECT =
-  'id, display_name, lat, lng, estado, municipio, status, source, external_url, photo_url, age_estimate, possible_duplicate_ids, cluster_id, cedula_confirmed, cluster_size, is_multi_person, last_seen_at, created_at';
+  'id, display_name, lat, lng, estado, municipio, status, source, external_url, photo_url, age_estimate, possible_duplicate_ids, cluster_id, cedula_confirmed, cluster_size, is_multi_person, last_seen_at, source_updated_at, created_at, updated_at';
 
 const field =
   'w-full rounded-md border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-zinc-900';
@@ -243,13 +243,25 @@ export function MissingPersonSearch({
   const [loading, setLoading] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  function handleQueryChange(value: string) {
+    setQuery(value);
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    if (value.trim().length < 2) {
+      setResults(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+  }
+
   // Debounced server-side search over the public view (scales to 57k rows;
   // we never ship the whole registry to the client).
   useEffect(() => {
     const q = query.trim();
-    if (timer.current) clearTimeout(timer.current);
-    if (q.length < 2) { setResults(null); setLoading(false); return; }
-    setLoading(true);
+    if (q.length < 2) return;
     timer.current = setTimeout(async () => {
       const sb = getSupabaseBrowser();
       if (!sb) { setResults([]); setLoading(false); return; }
@@ -262,7 +274,12 @@ export function MissingPersonSearch({
       setResults((data as MissingPinPublic[]) ?? []);
       setLoading(false);
     }, 280);
-    return () => { if (timer.current) clearTimeout(timer.current); };
+    return () => {
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
+    };
   }, [query]);
 
   const identifiedClusters = useMemo(() => buildClusters(identified).sort((a, b) => b.members.length - a.members.length), [identified]);
@@ -292,7 +309,7 @@ export function MissingPersonSearch({
 
         <div className="mt-3">
           <label className="mb-1 block text-sm font-medium">{s.searchLabel}</label>
-          <input className={field} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={s.searchPlaceholder} />
+          <input className={field} value={query} onChange={(e) => handleQueryChange(e.target.value)} placeholder={s.searchPlaceholder} />
         </div>
 
         {loading && <p className="mt-3 text-sm text-zinc-500">{s.searching}</p>}
