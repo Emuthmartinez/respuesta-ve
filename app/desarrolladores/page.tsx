@@ -22,6 +22,11 @@ const S = {
     heading: 'API para desarrolladores',
     intro:
       'Respuesta VE funciona como backend federado para otras superficies: tu sitio o agente puede preguntar “¿esta persona ya está reportada?”, federar registros, reconciliar estados, publicar hospitales/refugios/organizaciones verificadas, sincronizar necesidades y mostrar una insignia de socio verificado.',
+    platformTitle: 'Instancia de una plataforma abierta',
+    platform:
+      'Esta web es la primera instancia de Humanitarian Federation Platform: un contrato reutilizable para crisis humanitarias que define registros con fuente, deduplicación revisable, proyecciones públicas seguras e insignias de socios verificados.',
+    platformRepo: 'Repositorio de la plataforma',
+    instanceManifest: 'Manifest de esta instancia',
     privacyTitle: 'Privacidad primero',
     privacy:
       'La cédula y las huellas de foto se usan SOLO para encontrar coincidencias y nunca se devuelven. Las respuestas solo traen datos públicos aceptados o entidades verificadas, coordenadas difuminadas, necesidades activas, canales públicos y enlace de vuelta a cada fuente. Entradas sospechosas quedan en revisión y la API nunca fusiona registros de forma destructiva.',
@@ -57,6 +62,11 @@ const S = {
     heading: 'Developer API',
     intro:
       'Respuesta VE works as a federated backend for other surfaces: your site or agent can ask “is this person already reported?”, federate records, reconcile status, publish verified hospitals/shelters/orgs, sync needs, and show a verified partner badge.',
+    platformTitle: 'Instance of an open platform',
+    platform:
+      'This website is the first instance of Humanitarian Federation Platform: a reusable contract for humanitarian crises that defines source-aware records, reviewable dedupe, safe public projections, and verified partner badges.',
+    platformRepo: 'Platform repository',
+    instanceManifest: 'This instance manifest',
     privacyTitle: 'Privacy first',
     privacy:
       'Cédula (national ID) and photo fingerprints are used ONLY to find matches and are never returned. Responses carry only accepted public metadata or verified entities, fuzzed coordinates, active needs, public channels, and a link back to each source. Suspicious entries are held for review and the API never destructively merges records.',
@@ -128,6 +138,29 @@ export default async function DesarrolladoresPage() {
     <div className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-bold tracking-tight">{s.heading}</h1>
       <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{s.intro}</p>
+
+      <section className="mt-6 border-l-4 border-red-600 bg-red-50 px-4 py-3 dark:bg-red-950/20">
+        <h2 className="text-sm font-semibold text-red-900 dark:text-red-100">{s.platformTitle}</h2>
+        <p className="mt-1 text-sm leading-relaxed text-red-950/85 dark:text-red-100/85">{s.platform}</p>
+        <div className="mt-3 flex flex-wrap gap-3 text-sm">
+          <a
+            href="https://github.com/Emuthmartinez/humanitarian-federation-platform"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-red-700 hover:underline dark:text-red-200"
+          >
+            {s.platformRepo} →
+          </a>
+          <a
+            href="/federation.instance.json"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-red-700 hover:underline dark:text-red-200"
+          >
+            {s.instanceManifest} →
+          </a>
+        </div>
+      </section>
 
       <div className="mt-5 flex flex-wrap gap-3 text-sm">
         <a href={`${API}/openapi`} target="_blank" rel="noopener noreferrer"

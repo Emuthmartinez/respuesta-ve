@@ -207,7 +207,8 @@ flowchart TB
   - **Files:** current repo files:
     `README.md`, `ARCHITECTURE.md`, `AGENTS.md`, `CONTRIBUTING.md`,
     `docs/STATUS.md`, `docs/PLATFORM_INSTANCE.md`,
-    `federation.instance.json`.
+    `federation.instance.json`, `public/federation.instance.json`,
+    `app/desarrolladores/page.tsx`.
   - **Approach:** keep live app code stable; document the repo boundary,
     migration count through `0033`, platform upstream, local instance config,
     and where generic contributions now belong.

@@ -22,10 +22,11 @@ Federation Platform.
 
 ## Public Manifest
 
-The root `federation.instance.json` file contains only public metadata. It is
+The root `federation.instance.json` file and the served
+`public/federation.instance.json` copy contain only public metadata. They are
 safe to commit and safe for partner sites to read. Do not add credentials,
 coordinator account details, private database ids, or incident-response contact
-information to that file.
+information to those files.
 
 ## Current Implementation
 
