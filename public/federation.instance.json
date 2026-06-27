@@ -17,6 +17,7 @@
     "missingPersons": true,
     "coordinationEntities": true,
     "partnerBadges": true,
-    "statusSync": true
+    "statusSync": true,
+    "publicIntake": true
   }
 }
