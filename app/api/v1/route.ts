@@ -18,8 +18,9 @@ export function GET() {
       entities: 'POST/GET /api/v1/entities — federate/search verified hospitals, shelters, orgs, needs, and channels',
       entityChanges: 'GET /api/v1/entities/changes?since= — changed verified crisis entities for sync',
       badge: 'GET /api/v1/badge?domain= — public partner verification badge lookup',
+      publicIntake: 'POST /api/v1/public-intake — no-key dropbox for any JSON/text/CSV/url-list that operators should review',
     },
-    auth: 'Authorization: Bearer <api-key>  (or x-api-key). Per-key rate limits; 429 + Retry-After when exceeded.',
+    auth: 'Partner endpoints use Authorization: Bearer <api-key> (or x-api-key). /public-intake and /badge require no key.',
     scopes: ['score', 'match', 'search', 'ingest'],
     pii_policy: 'Cédula and photo hashes are used only to find matches and are NEVER returned. Entity responses carry verified public metadata, fuzzed coordinates, needs, public channels, and link-backs only. Grouping is advisory; records are never destructively merged. Status sync is timestamp-aware to avoid stale overwrites.',
   });

@@ -165,6 +165,39 @@ const ENTITY_OUT = {
   },
 } as const;
 
+const PUBLIC_INTAKE_REQUEST = {
+  description: 'Any JSON value or raw text/CSV/url-list payload. Operators review this restricted queue before creating canonical records.',
+  oneOf: [
+    { type: 'object', additionalProperties: true },
+    { type: 'array', items: true },
+    { type: 'string' },
+    { type: 'number' },
+    { type: 'boolean' },
+  ],
+} as const;
+
+const PUBLIC_INTAKE_RECEIPT = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    ok: { type: 'boolean', const: true },
+    id: { type: 'string', format: 'uuid' },
+    eventId: { type: 'string' },
+    source: { type: 'string' },
+    status: { type: 'string', enum: ['received_for_review'] },
+    authentication: { type: 'string', enum: ['none_required'] },
+    submittedAt: { type: 'string', format: 'date-time' },
+    payloadFormat: { type: 'string', enum: ['json', 'csv', 'url_list', 'text', 'unknown'] },
+    submissionKind: { type: 'string', enum: ['person', 'entity', 'need', 'status', 'media', 'url_list', 'mixed', 'unknown'] },
+    payloadSizeChars: { type: 'integer' },
+    urlCount: { type: 'integer' },
+    warnings: { type: 'array', items: { type: 'string' } },
+    recommendedAction: { type: 'string', enum: ['operator_triage'] },
+    message: { type: 'string' },
+    disclosure: { type: 'string', enum: ['restricted_unverified_public_submission'] },
+  },
+} as const;
+
 const SPEC = {
   openapi: '3.1.0',
   info: {
@@ -193,6 +226,8 @@ const SPEC = {
       EntityChannel: ENTITY_CHANNEL_OUT,
       EntityNeed: ENTITY_NEED_OUT,
       Entity: ENTITY_OUT,
+      PublicIntakeRequest: PUBLIC_INTAKE_REQUEST,
+      PublicIntakeReceipt: PUBLIC_INTAKE_RECEIPT,
     },
     responses: {
       Unauthorized: { description: 'Missing/invalid key, or insufficient scope.' },
@@ -317,6 +352,33 @@ const SPEC = {
           { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 500, default: 100 } },
         ],
         responses: { '200': { description: 'results plus nextSince cursor.' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
+      },
+    },
+    '/public-intake': {
+      get: {
+        summary: 'Explain the no-key public intake dropbox.',
+        description: 'Returns a small machine-readable help payload with limits and an example. No API key is required.',
+        security: [],
+        responses: { '200': { description: 'Endpoint help and example.' } },
+      },
+      post: {
+        summary: 'Submit any public lead/data shape for restricted operator review, no API key required.',
+        description: 'Use this when a volunteer, Discord community, scraper, or partner does not yet have an API key but needs to send data now. The raw payload is stored in a restricted queue. The response is only a receipt; nothing is public or canonical until reviewed.',
+        security: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/PublicIntakeRequest' } },
+            'text/plain': { schema: { type: 'string', maxLength: 1048576 } },
+            'text/csv': { schema: { type: 'string', maxLength: 1048576 } },
+          },
+        },
+        responses: {
+          '202': { description: 'Received for review.', content: { 'application/json': { schema: { $ref: '#/components/schemas/PublicIntakeReceipt' } } } },
+          '400': { $ref: '#/components/responses/Invalid' },
+          '413': { description: 'Payload over 1 MiB.' },
+          '429': { $ref: '#/components/responses/RateLimited' },
+        },
       },
     },
     '/badge': {

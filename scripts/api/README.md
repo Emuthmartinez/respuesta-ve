@@ -8,6 +8,8 @@ trusted backend instead of fragmenting into stale crisis data silos.
 - **Spec:** `GET /api/v1/openapi` (OpenAPI 3.1) · **Discovery:** `GET /api/v1`
 - **Auth:** `Authorization: Bearer <key>` (or `x-api-key`). Per-key rate limits →
   `429` + `Retry-After`. Remaining quota in `X-RateLimit-Remaining-Minute/Day`.
+- **No-key dropbox:** `POST /api/v1/public-intake` accepts public JSON, text,
+  CSV, and URL-list leads up to 1 MiB for restricted operator review.
 - **PII:** cédula and photo hashes are **match-only, never returned**. Missing
   person responses carry only the public metadata the source registries already
   show, plus a link back to each source. Entity responses carry verified public
@@ -34,7 +36,29 @@ trusted backend instead of fragmenting into stale crisis data silos.
 | POST | `/entities` | `ingest` | Federate hospitals, clinics, shelters, supply hubs, orgs, needs, and public channels. |
 | GET | `/entities?q=&kind=&estado=` | `search` | Search verified crisis entities. |
 | GET | `/entities/changes?since=` | `search` | Poll verified public entities changed since your last cursor. |
+| POST | `/public-intake` | public | No-key review queue for any public lead/data shape. |
 | GET | `/badge?domain=` | public | Check whether a domain is a verified federation partner. |
+
+### Example — no-key public intake
+
+Anyone can send a lead, URL list, scraped text, spreadsheet row, or arbitrary JSON
+shape to the restricted review queue without an API key:
+
+```bash
+curl -X POST https://respuestave.org/api/v1/public-intake \
+  -H 'content-type: application/json' \
+  -d '{
+    "source": "discord",
+    "kind": "url_list",
+    "data": ["https://example.org/report/123"],
+    "note": "Any public lead or scrape target that operators should review"
+  }'
+```
+
+The endpoint also accepts `text/plain` and `text/csv` bodies up to 1 MiB. It
+returns only a receipt (`status: received_for_review`); raw payloads, contact
+fields, notes, and URLs remain in the restricted operator queue and are not
+published by the API.
 
 ### Example — match
 
