@@ -1,4 +1,4 @@
-export const MAX_PUBLIC_INTAKE_BODY_BYTES = 1024 * 1024;
+export const MAX_PUBLIC_INTAKE_BODY_BYTES = 5 * 1024 * 1024;
 export const PUBLIC_INTAKE_EVENT_ID = 'venezuela-earthquakes-2026';
 
 const FORMATS = ['json', 'csv', 'url_list', 'text', 'unknown'] as const;

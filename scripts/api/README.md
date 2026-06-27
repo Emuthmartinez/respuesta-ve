@@ -9,7 +9,8 @@ trusted backend instead of fragmenting into stale crisis data silos.
 - **Auth:** `Authorization: Bearer <key>` (or `x-api-key`). Per-key rate limits →
   `429` + `Retry-After`. Remaining quota in `X-RateLimit-Remaining-Minute/Day`.
 - **No-key dropbox:** `POST /api/v1/public-intake` accepts public JSON, text,
-  CSV, and URL-list leads up to 1 MiB for restricted operator review.
+  CSV, URL-list leads, and small typed-file envelopes up to 5 MiB for restricted
+  operator review. The receipt includes `statusUrl` for polling.
 - **PII:** cédula and photo hashes are **match-only, never returned**. Missing
   person responses carry only the public metadata the source registries already
   show, plus a link back to each source. Entity responses carry verified public
@@ -55,10 +56,27 @@ curl -X POST https://respuestave.org/api/v1/public-intake \
   }'
 ```
 
-The endpoint also accepts `text/plain` and `text/csv` bodies up to 1 MiB. It
-returns only a receipt (`status: received_for_review`); raw payloads, contact
-fields, notes, and URLs remain in the restricted operator queue and are not
-published by the API.
+The endpoint also accepts `text/plain` and `text/csv` bodies up to 5 MiB. It
+returns only a receipt (`status: received_for_review`) plus `statusUrl`; raw
+payloads, contact fields, notes, and URLs remain in the restricted operator queue
+and are not published by the API.
+
+Poll the returned `statusUrl` until `status` changes:
+
+```bash
+curl -s "https://respuestave.org/api/v1/public-intake?id=<receipt-id>"
+```
+
+Once operators promote a submission into canonical records, partners fetch the
+normalized public data with cursor polling:
+
+```bash
+curl -s "https://respuestave.org/api/v1/persons/changes?since=2026-06-27T00:00:00Z" \
+  -H "Authorization: Bearer $RVK"
+
+curl -s "https://respuestave.org/api/v1/entities/changes?since=2026-06-27T00:00:00Z" \
+  -H "Authorization: Bearer $RVK"
+```
 
 ### Example — match
 

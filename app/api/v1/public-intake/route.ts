@@ -10,6 +10,8 @@ import { getSupabaseServer } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 
+type IntakeReceipt = { ok?: boolean; id?: unknown; error?: string } & Record<string, unknown>;
+
 function ipHash(req: Request): string {
   const xff = req.headers.get('x-forwarded-for') || '';
   const ip = xff.split(',')[0].trim() || 'unknown';
@@ -18,21 +20,51 @@ function ipHash(req: Request): string {
   return createHash('sha256').update(`${ip}|${day}|${salt}`).digest('hex');
 }
 
-export function GET() {
+function statusUrl(req: Request, id: unknown): string | null {
+  if (typeof id !== 'string' || !id) return null;
+  const url = new URL(req.url);
+  url.search = new URLSearchParams({ id }).toString();
+  return url.toString();
+}
+
+function withStatusUrl(req: Request, receipt: IntakeReceipt): IntakeReceipt {
+  const url = statusUrl(req, receipt.id);
+  return url ? { ...receipt, statusUrl: url } : receipt;
+}
+
+export async function GET(req: Request) {
+  const id = new URL(req.url).searchParams.get('id');
+  if (id) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+      return apiError('bad_id', 400);
+    }
+    const sb = await getSupabaseServer();
+    if (!sb) return apiError('service_unavailable', 503);
+    const { data, error } = await sb.rpc('get_public_data_intake_receipt', { p_id: id });
+    if (error) return apiError('receipt_unavailable', 503);
+    const receipt = data as IntakeReceipt | null;
+    if (!receipt?.ok) return apiError(receipt?.error ?? 'not_found', receipt?.error === 'not_found' ? 404 : 400);
+    return NextResponse.json(withStatusUrl(req, receipt), { headers: { 'Cache-Control': 'no-store' } });
+  }
+
   return NextResponse.json({
     ok: true,
     endpoint: 'POST /api/v1/public-intake',
+    statusEndpoint: 'GET /api/v1/public-intake?id=<receipt-id>',
     auth: 'No API key required.',
     maxBytes: MAX_PUBLIC_INTAKE_BODY_BYTES,
-    accepts: ['application/json', 'text/plain', 'text/csv'],
+    accepts: ['application/json', 'text/plain', 'text/csv', 'JSON envelopes with small file data URLs/text extracts'],
     status: 'received_for_review',
+    downstreamFetch:
+      'Providers poll their receipt statusUrl for intake processing status. After review/promotion, partners poll /api/v1/persons/changes and /api/v1/entities/changes with a since cursor to fetch normalized canonical data.',
     privacy:
       'Raw payloads, contacts, notes, and URLs are stored in a restricted operator queue. The response returns only a receipt, never the submitted data.',
     example: {
       source: 'discord',
       kind: 'url_list',
       data: ['https://example.org/report/123'],
-      note: 'Share any source, spreadsheet row, scraped text, or JSON shape that needs review.',
+      files: [{ name: 'hospital-list.csv', type: 'text/csv', text: 'name,state\\nHospital Central,Lara' }],
+      note: 'Share any source, spreadsheet row, scraped text, photo metadata, or JSON shape that needs review.',
     },
   }, { headers: { 'Cache-Control': 'public, max-age=300' } });
 }
@@ -68,11 +100,11 @@ export async function POST(req: Request) {
 
   if (error) return apiError('intake_unavailable', 503);
 
-  const result = data as { ok?: boolean; error?: string } | null;
+  const result = data as IntakeReceipt | null;
   if (!result?.ok) {
     const code = result?.error ?? 'intake_rejected';
     return apiError(code, code === 'rate_limited' ? 429 : 400);
   }
 
-  return NextResponse.json(result, { status: 202, headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json(withStatusUrl(req, result), { status: 202, headers: { 'Cache-Control': 'no-store' } });
 }
