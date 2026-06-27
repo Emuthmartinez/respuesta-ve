@@ -12,11 +12,16 @@ const ALLOWED_NEXT = new Set([
   '/desarrolladores/claves',
 ]);
 
+const FALLBACK_BY_NEXT = new Map([
+  ['/desarrolladores/claves', '/desarrolladores/acceder?error=auth'],
+]);
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const rawNext = searchParams.get('next') ?? '/voluntarios';
   const next = ALLOWED_NEXT.has(rawNext) ? rawNext : '/voluntarios';
+  const fallback = FALLBACK_BY_NEXT.get(next) ?? '/voluntarios?error=auth';
 
   if (code) {
     const supabase = await getSupabaseServer();
@@ -25,5 +30,5 @@ export async function GET(request: Request) {
       if (!error) return NextResponse.redirect(`${origin}${next}`);
     }
   }
-  return NextResponse.redirect(`${origin}/voluntarios?error=auth`);
+  return NextResponse.redirect(`${origin}${fallback}`);
 }
