@@ -55,16 +55,39 @@ export async function GET(req: Request) {
     maxBytes: MAX_PUBLIC_INTAKE_BODY_BYTES,
     accepts: ['application/json', 'text/plain', 'text/csv', 'JSON envelopes with small file data URLs/text extracts'],
     status: 'received_for_review',
+    cleanupContract:
+      'Send sourceRecordId, contentFingerprint, processingHints, and canonicalCandidates when available. Operators use those restricted fields to dedupe/clean the queue, then promote safe records through /api/v1/persons or /api/v1/entities.',
     downstreamFetch:
       'Providers poll their receipt statusUrl for intake processing status. After review/promotion, partners poll /api/v1/persons/changes and /api/v1/entities/changes with a since cursor to fetch normalized canonical data.',
     privacy:
-      'Raw payloads, contacts, notes, and URLs are stored in a restricted operator queue. The response returns only a receipt, never the submitted data.',
+      'Raw payloads, contacts, notes, URLs, content fingerprints, candidate records, and image data stay in a restricted operator queue. The response returns only a receipt, never the submitted data.',
     example: {
-      source: 'discord',
-      kind: 'url_list',
-      data: ['https://example.org/report/123'],
-      files: [{ name: 'hospital-list.csv', type: 'text/csv', text: 'name,state\\nHospital Central,Lara' }],
-      note: 'Share any source, spreadsheet row, scraped text, photo metadata, or JSON shape that needs review.',
+      eventId: 'venezuela-earthquakes-2026',
+      source: 'mapa-emergencia-rescate',
+      sourceRecordId: 'mapa-emergencia-rescate:hospital:123',
+      contentFingerprint: 'sha256:...',
+      kind: 'entity',
+      audienceScope: 'in_venezuela',
+      processingHints: {
+        dedupeMode: 'candidate_review_not_auto_merge',
+        promotionPath: '/api/v1/entities',
+        cleanupPipeline: ['normalize_entity', 'dedupe_entity_by_name_area', 'operator_promote_safe_records'],
+      },
+      canonicalCandidates: [{
+        kind: 'entity',
+        externalId: 'mapa-emergencia-rescate:hospital:123',
+        sourceUrl: 'https://terremotovenezuela.app/hospitales/hospital-central',
+        entity: {
+          kind: 'hospital',
+          name: 'Hospital Central',
+          estado: 'Lara',
+          municipio: 'Barquisimeto',
+          needs: [{ category: 'medical_supplies', title: 'Gasas', urgency: 'high' }],
+        },
+      }],
+      data: {
+        note: 'Share any source, spreadsheet row, scraped text, photo metadata, or JSON shape that needs review.',
+      },
     },
   }, { headers: { 'Cache-Control': 'public, max-age=300' } });
 }

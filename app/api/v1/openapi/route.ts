@@ -166,7 +166,7 @@ const ENTITY_OUT = {
 } as const;
 
 const PUBLIC_INTAKE_REQUEST = {
-  description: 'Any JSON value or raw text/CSV/url-list payload. Operators review this restricted queue before creating canonical records.',
+  description: 'Any JSON value or raw text/CSV/url-list payload. Operators review this restricted queue before creating canonical records. Recommended JSON wrappers may include sourceRecordId, contentFingerprint, processingHints, and canonicalCandidates so operators can dedupe/clean and promote via /persons or /entities without losing source provenance.',
   oneOf: [
     { type: 'object', additionalProperties: true },
     { type: 'array', items: true },
@@ -372,12 +372,44 @@ const SPEC = {
       },
       post: {
         summary: 'Submit any public lead/data shape for restricted operator review, no API key required.',
-        description: 'Use this when a volunteer, Discord community, scraper, or partner does not yet have an API key but needs to send data now. The raw payload is stored in a restricted queue. The response is only a receipt; nothing is public or canonical until reviewed.',
+        description: 'Use this when a volunteer, Discord community, scraper, or partner does not yet have an API key but needs to send data now. The raw payload is stored in a restricted queue. Include sourceRecordId/contentFingerprint/canonicalCandidates when available; operators use those restricted hints for dedupe and cleanup, then promote through /persons or /entities. The response is only a receipt; nothing is public or canonical until reviewed.',
         security: [],
         requestBody: {
           required: true,
           content: {
-            'application/json': { schema: { $ref: '#/components/schemas/PublicIntakeRequest' } },
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PublicIntakeRequest' },
+              examples: {
+                typedEntityCandidate: {
+                  summary: 'Typed candidate ready for restricted cleanup and entity promotion',
+                  value: {
+                    eventId: 'venezuela-earthquakes-2026',
+                    source: 'mapa-emergencia-rescate',
+                    sourceRecordId: 'mapa-emergencia-rescate:hospital:123',
+                    contentFingerprint: 'sha256:...',
+                    kind: 'entity',
+                    audienceScope: 'in_venezuela',
+                    processingHints: {
+                      dedupeMode: 'candidate_review_not_auto_merge',
+                      promotionPath: '/api/v1/entities',
+                      cleanupPipeline: ['normalize_entity', 'dedupe_entity_by_name_area', 'operator_promote_safe_records'],
+                    },
+                    canonicalCandidates: [{
+                      kind: 'entity',
+                      externalId: 'mapa-emergencia-rescate:hospital:123',
+                      sourceUrl: 'https://terremotovenezuela.app/hospitales/hospital-central',
+                      entity: {
+                        kind: 'hospital',
+                        name: 'Hospital Central',
+                        estado: 'Lara',
+                        municipio: 'Barquisimeto',
+                        needs: [{ category: 'medical_supplies', title: 'Gasas', urgency: 'high' }],
+                      },
+                    }],
+                  },
+                },
+              },
+            },
             'text/plain': { schema: { type: 'string', maxLength: 5242880 } },
             'text/csv': { schema: { type: 'string', maxLength: 5242880 } },
           },
