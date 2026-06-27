@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AccountAccessForm } from '@/components/AccountAccessForm';
+import { getSupabasePublicConfig } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
   title: 'Cuenta de desarrollador · Respuesta VE',
@@ -7,5 +8,12 @@ export const metadata: Metadata = {
 };
 
 export default function DeveloperAccessPage() {
-  return <AccountAccessForm variant="developer" nextPath="/desarrolladores/claves" backHref="/desarrolladores" />;
+  return (
+    <AccountAccessForm
+      variant="developer"
+      nextPath="/desarrolladores/claves"
+      backHref="/desarrolladores"
+      supabaseConfig={getSupabasePublicConfig()}
+    />
+  );
 }
