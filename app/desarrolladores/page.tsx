@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { FederationNetwork } from '@/components/FederationNetwork';
 import { getLocale } from '@/lib/i18n-server';
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://respuestave.org';
@@ -161,6 +162,10 @@ export default async function DesarrolladoresPage() {
           </a>
         </div>
       </section>
+
+      <div className="-mx-4 mt-8 sm:-mx-6">
+        <FederationNetwork locale={locale} variant="inline" />
+      </div>
 
       <div className="mt-5 flex flex-wrap gap-3 text-sm">
         <a href={`${API}/openapi`} target="_blank" rel="noopener noreferrer"

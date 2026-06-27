@@ -4,6 +4,7 @@ import { Principles } from '@/components/Principles';
 import { t } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n-server';
 import { HomeMapSection } from '@/components/HomeMapSection';
+import { FederationNetwork } from '@/components/FederationNetwork';
 
 export default async function Home() {
   const locale = await getLocale();
@@ -41,6 +42,8 @@ export default async function Home() {
 
       {/* Map section — list by default, full map on demand */}
       <HomeMapSection locale={locale} />
+
+      <FederationNetwork locale={locale} />
 
       <Principles locale={locale} />
     </div>

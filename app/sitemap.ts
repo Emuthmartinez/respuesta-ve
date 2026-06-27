@@ -21,6 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     route('/recursos', 'daily', 0.8),
     route('/primeros-auxilios', 'monthly', 0.7),
     route('/personas', 'daily', 0.7),
+    route('/red', 'weekly', 0.8),
     route('/desmentidos', 'daily', 0.7),
     route('/solicitar-inspeccion', 'monthly', 0.6),
     route('/voluntarios', 'weekly', 0.5),
