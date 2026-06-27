@@ -1,5 +1,5 @@
-// GET /api/v1/openapi — the OpenAPI 3.1 contract (no auth). Agents and partners
-// consume this to discover the dedup/matching API.
+// GET /api/v1/openapi — the OpenAPI 3.1 contract. Agents and partners consume
+// this to discover the dedup/matching API.
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-static';
@@ -185,7 +185,6 @@ const PUBLIC_INTAKE_RECEIPT = {
     eventId: { type: 'string' },
     source: { type: 'string' },
     status: { type: 'string', enum: ['received_for_review', 'triaged', 'promoted', 'ignored', 'spam'] },
-    authentication: { type: 'string', enum: ['none_required'] },
     submittedAt: { type: 'string', format: 'date-time' },
     updatedAt: { type: 'string', format: 'date-time' },
     payloadFormat: { type: 'string', enum: ['json', 'csv', 'url_list', 'text', 'unknown'] },
@@ -362,8 +361,8 @@ const SPEC = {
     },
     '/public-intake': {
       get: {
-        summary: 'Explain the no-key public intake dropbox or poll receipt status.',
-        description: 'Without id, returns help payload with limits and an example. With id, returns a receipt-safe processing status. No API key is required.',
+        summary: 'Explain the public intake queue or poll receipt status.',
+        description: 'Without id, returns help payload with limits and an example. With id, returns a receipt-safe processing status.',
         security: [],
         parameters: [
           { name: 'id', in: 'query', required: false, schema: { type: 'string', format: 'uuid' }, description: 'Receipt id from POST /public-intake.' },
@@ -371,8 +370,8 @@ const SPEC = {
         responses: { '200': { description: 'Endpoint help or PublicIntakeReceipt.' }, '404': { description: 'Receipt not found.' } },
       },
       post: {
-        summary: 'Submit any public lead/data shape for restricted operator review, no API key required.',
-        description: 'Use this when a volunteer, Discord community, scraper, or partner does not yet have an API key but needs to send data now. The raw payload is stored in a restricted queue. Include sourceRecordId/contentFingerprint/canonicalCandidates when available; operators use those restricted hints for dedupe and cleanup, then promote through /persons or /entities. The response is only a receipt; nothing is public or canonical until reviewed.',
+        summary: 'Submit any public lead/data shape for restricted operator review.',
+        description: 'Use this when a volunteer, Discord community, scraper, or partner needs to send data for restricted operator review. The raw payload is stored in a restricted queue. Include sourceRecordId/contentFingerprint/canonicalCandidates when available; operators use those restricted hints for dedupe and cleanup, then promote through /persons or /entities. The response is only a receipt; nothing is public or canonical until reviewed.',
         security: [],
         requestBody: {
           required: true,
