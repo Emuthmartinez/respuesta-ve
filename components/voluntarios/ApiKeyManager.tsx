@@ -12,6 +12,8 @@ interface Key {
   rate_limit_per_min: number;
   rate_limit_per_day: number;
   ingest_source: string;
+  owner_email: string | null;
+  issued_via: string | null;
   enabled: boolean;
   revoked_at: string | null;
   notes: string | null;
@@ -21,7 +23,7 @@ interface Key {
 
 const ALL_SCOPES = ['score', 'match', 'search', 'ingest'] as const;
 const SOURCES = ['other', 'venezuelatebusca', 'desaparecidosterremotovenezuela', 'desaparecidosvenezuela', 'pfif_feed'] as const;
-const KEY_SELECT = 'id,name,key_prefix,scopes,rate_limit_per_min,rate_limit_per_day,ingest_source,enabled,revoked_at,notes,created_at,last_used_at';
+const KEY_SELECT = 'id,name,key_prefix,scopes,rate_limit_per_min,rate_limit_per_day,ingest_source,owner_email,issued_via,enabled,revoked_at,notes,created_at,last_used_at';
 
 const STR = {
   es: {
@@ -32,6 +34,8 @@ const STR = {
     existing: 'Claves existentes', none: 'No hay claves todavía.', loading: 'Cargando…',
     revoked: 'Revocada', disabled: 'Desactivada', active: 'Activa', revoke: 'Revocar', disable: 'Desactivar', enable: 'Activar',
     lastUsed: 'Último uso', never: 'nunca', confirmRevoke: '¿Revocar esta clave de forma permanente?',
+    owner: 'Cuenta',
+    issuedVia: 'Origen',
     noPerm: 'Sin permiso de coordinador.', needName: 'Pon un nombre.', needScope: 'Elige al menos un permiso.',
   },
   en: {
@@ -42,6 +46,8 @@ const STR = {
     existing: 'Existing keys', none: 'No keys yet.', loading: 'Loading…',
     revoked: 'Revoked', disabled: 'Disabled', active: 'Active', revoke: 'Revoke', disable: 'Disable', enable: 'Enable',
     lastUsed: 'Last used', never: 'never', confirmRevoke: 'Permanently revoke this key?',
+    owner: 'Account',
+    issuedVia: 'Origin',
     noPerm: 'Coordinator access required.', needName: 'Enter a name.', needScope: 'Pick at least one scope.',
   },
 } as const;
@@ -82,7 +88,11 @@ export function ApiKeyManager() {
     setKeys((data as Key[]) ?? []);
     setLoading(false);
   }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    void (async () => {
+      await load();
+    })();
+  }, [load]);
 
   async function issue() {
     setMsg('');
@@ -191,6 +201,8 @@ export function ApiKeyManager() {
                       <span>{k.scopes.join(', ')}</span>
                       <span>· {k.rate_limit_per_min}/min · {k.rate_limit_per_day}/día</span>
                       <span>· {k.ingest_source}</span>
+                      {k.issued_via && <span>· {s.issuedVia}: {k.issued_via}</span>}
+                      {k.owner_email && <span>· {s.owner}: {k.owner_email}</span>}
                       <span>· {s.lastUsed}: {k.last_used_at ? new Date(k.last_used_at).toLocaleString(locale) : s.never}</span>
                     </div>
                     {!revoked && (

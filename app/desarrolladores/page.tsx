@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { FederationNetwork } from '@/components/FederationNetwork';
 import { getLocale } from '@/lib/i18n-server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://respuestave.org';
 const API = `${BASE.replace(/\/$/, '')}/api/v1`;
@@ -34,14 +35,17 @@ const S = {
     endpointsTitle: 'Endpoints',
     authTitle: 'Autenticación y límites',
     auth:
-      'Cada solicitud lleva una clave de socio: «Authorization: Bearer rvk_…». Hay límites de uso por clave (respuesta 429 con Retry-After). Ámbitos: score, match, search, ingest.',
+      'Cada solicitud lleva una clave de socio: «Authorization: Bearer rvk_…». Crea una cuenta para emitir tu clave desde esta web. Hay límites de uso por clave (respuesta 429 con Retry-After). Ámbitos: score, match, search, ingest.',
     exampleTitle: 'Ejemplo',
     mcpTitle: 'MCP (para agentes de IA)',
     mcp:
       'Un servidor MCP expone las mismas funciones como herramientas de agente: match_person, score_persons, search_persons, submit_person, get_person_status, list_person_changes, submit_entity, search_entities, list_entity_changes y verify_badge. Configúralo apuntando a la API con tu clave:',
-    accessTitle: 'Solicitar una clave',
+    accessTitle: 'Crear cuenta y clave',
     access:
-      'Las claves las emite el equipo de coordinación. Escríbenos para integrar tu registro o tu agente:',
+      'Crea una cuenta, emite una clave y úsala desde tu servidor. La clave queda asociada a tu cuenta para poder pausar, revocar o ajustar límites si hace falta.',
+    accessCta: 'Crear cuenta y clave',
+    accessSignedInCta: 'Ver mis claves',
+    accessSecondary: 'Las integraciones de confianza pueden pedir verificación y límites más altos cuando ya estén conectadas.',
     specLink: 'Especificación OpenAPI',
     discoveryLink: 'Descubrimiento de la API',
     back: 'Volver al inicio',
@@ -74,14 +78,17 @@ const S = {
     endpointsTitle: 'Endpoints',
     authTitle: 'Authentication & limits',
     auth:
-      'Every request carries a partner key: “Authorization: Bearer rvk_…”. Per-key rate limits apply (429 with Retry-After). Scopes: score, match, search, ingest.',
+      'Every request carries a partner key: “Authorization: Bearer rvk_…”. Create an account to issue your key from this site. Per-key rate limits apply (429 with Retry-After). Scopes: score, match, search, ingest.',
     exampleTitle: 'Example',
     mcpTitle: 'MCP (for AI agents)',
     mcp:
       'An MCP server exposes the same capabilities as agent tools: match_person, score_persons, search_persons, submit_person, get_person_status, list_person_changes, submit_entity, search_entities, list_entity_changes, and verify_badge. Point it at the API with your key:',
-    accessTitle: 'Request a key',
+    accessTitle: 'Create account and key',
     access:
-      'Keys are issued by the coordination team. Get in touch to connect your registry or agent:',
+      'Create an account, issue a key, and use it from your server. The key stays tied to your account so access can be paused, revoked, or rate-limited if needed.',
+    accessCta: 'Create account and key',
+    accessSignedInCta: 'View my keys',
+    accessSecondary: 'Trusted integrations can request verification and higher limits once they are connected.',
     specLink: 'OpenAPI specification',
     discoveryLink: 'API discovery',
     back: 'Back to home',
@@ -106,6 +113,10 @@ const codeCls = 'block overflow-x-auto rounded-lg bg-zinc-900 p-4 text-xs leadin
 export default async function DesarrolladoresPage() {
   const locale = await getLocale();
   const s = S[locale];
+  const sb = await getSupabaseServer();
+  const {
+    data: { user },
+  } = sb ? await sb.auth.getUser() : { data: { user: null } };
 
   const curl = `curl -s ${API}/entities \\
   -H "Authorization: Bearer $RVK_API_KEY" \\
@@ -218,8 +229,17 @@ export default async function DesarrolladoresPage() {
       <section className="mt-8 rounded-lg border border-black/10 p-4 dark:border-white/10">
         <h2 className="text-lg font-semibold">{s.accessTitle}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{s.access}</p>
-        <a href="mailto:api@respuestave.org?subject=Respuesta%20VE%20API%20access"
-          className="mt-2 inline-block font-medium text-red-600 hover:underline">api@respuestave.org →</a>
+        <div className="mt-3 flex flex-wrap gap-3 text-sm">
+          <Link href={user ? '/desarrolladores/claves' : '/desarrolladores/acceder'}
+            className="rounded-md bg-red-600 px-3 py-1.5 font-medium text-white hover:bg-red-700">
+            {user ? s.accessSignedInCta : s.accessCta} →
+          </Link>
+          <a href="mailto:api@respuestave.org?subject=Respuesta%20VE%20API%20verification"
+            className="rounded-md border border-black/15 px-3 py-1.5 font-medium hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/5">
+            api@respuestave.org →
+          </a>
+        </div>
+        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{s.accessSecondary}</p>
       </section>
 
       <div className="mt-10">

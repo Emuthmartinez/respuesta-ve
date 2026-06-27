@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/voluntarios/moderacion', '/voluntarios/cola', '/voluntarios/evaluar', '/voluntarios/responders', '/auth/', '/api/', '/ayuda/'],
+        disallow: ['/voluntarios/moderacion', '/voluntarios/cola', '/voluntarios/evaluar', '/voluntarios/responders', '/desarrolladores/acceder', '/desarrolladores/claves', '/auth/', '/api/', '/ayuda/'],
       },
       // AI crawlers — public content is explicitly welcome (GEO).
       { userAgent: 'GPTBot', allow: '/' },
