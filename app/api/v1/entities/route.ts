@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
     p_source_updated_at: entity.sourceUpdatedAt ?? null,
     p_channels: entity.channels,
     p_needs: entity.needs,
+    p_audience_scope: entity.audienceScope ?? null,
+    p_country_code: entity.countryCode ?? null,
   });
 
   const r = data as {
@@ -70,11 +72,15 @@ export async function GET(req: NextRequest) {
     q: sp.get('q') ?? undefined,
     kind: sp.get('kind') ?? undefined,
     estado: sp.get('estado') ?? undefined,
+    audienceScope: sp.get('audienceScope') ?? undefined,
+    countryCode: sp.get('countryCode') ?? undefined,
     limit: limitRaw == null ? undefined : Number(limitRaw),
   });
   if (!parsed.success) return apiError('validation_failed', 400, { detail: zodMessage(parsed.error) });
   const query = parsed.data;
-  if (!query.q && !query.kind && !query.estado) return apiError('validation_failed', 400, { detail: 'q, kind, or estado is required' });
+  if (!query.q && !query.kind && !query.estado && !query.audienceScope && !query.countryCode) {
+    return apiError('validation_failed', 400, { detail: 'q, kind, estado, audienceScope, or countryCode is required' });
+  }
 
   const sb = await getSupabaseServer();
   if (!sb) return apiError('service_unavailable', 503);

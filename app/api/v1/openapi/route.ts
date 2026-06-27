@@ -124,6 +124,8 @@ const ENTITY_NEED_OUT = {
   },
 } as const;
 
+const ENTITY_AUDIENCE_SCOPES = ['in_venezuela', 'outside_venezuela', 'both'] as const;
+
 const ENTITY_INPUT = {
   type: 'object',
   required: ['kind', 'name'],
@@ -134,6 +136,8 @@ const ENTITY_INPUT = {
     description: { type: 'string', maxLength: 900, nullable: true },
     estado: { type: 'string', maxLength: 80, nullable: true },
     municipio: { type: 'string', maxLength: 120, nullable: true },
+    audienceScope: { type: 'string', enum: ENTITY_AUDIENCE_SCOPES, nullable: true, description: 'Whether the resource serves people in Venezuela, outside Venezuela, or both.' },
+    countryCode: { type: 'string', minLength: 2, maxLength: 2, nullable: true, description: 'ISO-3166 alpha-2 country code for cross-border resources such as USA acopio.' },
     lat: { type: 'number', minimum: -90, maximum: 90, nullable: true, description: 'Stored precise; public responses are fuzzed.' },
     lng: { type: 'number', minimum: -180, maximum: 180, nullable: true, description: 'Stored precise; public responses are fuzzed.' },
     address: { type: 'string', maxLength: 300, nullable: true, description: 'Coordinator-only base-table field; not returned by the public API.' },
@@ -160,6 +164,8 @@ const ENTITY_OUT = {
     lastVerifiedAt: { type: 'string', nullable: true },
     sourceUpdatedAt: { type: 'string', nullable: true },
     updatedAt: { type: 'string' },
+    audienceScope: { type: 'string', enum: ENTITY_AUDIENCE_SCOPES, nullable: true },
+    countryCode: { type: 'string', nullable: true },
     channels: { type: 'array', items: ENTITY_CHANNEL_OUT },
     needs: { type: 'array', items: ENTITY_NEED_OUT },
   },
@@ -212,7 +218,7 @@ const SPEC = {
       'Match and deduplicate missing-person records, and federate verified crisis entities for the 2026 Venezuela earthquake response. ' +
       'PII policy: cédula and photo hashes are used only to FIND matches and are never returned; responses carry only the ' +
       'public metadata the source registries already show, plus a link back to each source. Entity responses expose only verified ' +
-      'public data: fuzzed coordinates, active needs, and public contribution channels. Grouping is advisory — the API never destructively merges records. ' +
+      'public data: fuzzed coordinates, active needs, public contribution channels, and cross-border audience/country grouping where reviewed. Grouping is advisory — the API never destructively merges records. ' +
       'Status/entity sync is timestamp-aware: older partner updates cannot overwrite newer source status. Intake quality is also gated.',
     contact: { name: 'Respuesta VE', url: 'https://respuestave.org' },
     license: { name: 'Humanitarian use', url: 'https://respuestave.org' },
@@ -342,6 +348,8 @@ const SPEC = {
           { name: 'q', in: 'query', schema: { type: 'string' }, description: 'Name/description substring.' },
           { name: 'kind', in: 'query', schema: { type: 'string' } },
           { name: 'estado', in: 'query', schema: { type: 'string' } },
+          { name: 'audienceScope', in: 'query', schema: { type: 'string', enum: ENTITY_AUDIENCE_SCOPES } },
+          { name: 'countryCode', in: 'query', schema: { type: 'string', minLength: 2, maxLength: 2 } },
           { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 25 } },
         ],
         responses: { '200': { description: 'results: array of Entity.' }, '401': { $ref: '#/components/responses/Unauthorized' }, '400': { $ref: '#/components/responses/Invalid' }, '429': { $ref: '#/components/responses/RateLimited' } },
@@ -402,6 +410,8 @@ const SPEC = {
                         name: 'Hospital Central',
                         estado: 'Lara',
                         municipio: 'Barquisimeto',
+                        audienceScope: 'in_venezuela',
+                        countryCode: 'VE',
                         needs: [{ category: 'medical_supplies', title: 'Gasas', urgency: 'high' }],
                       },
                     }],

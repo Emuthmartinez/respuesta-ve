@@ -17,8 +17,9 @@ trusted backend instead of fragmenting into stale crisis data silos.
 - **PII:** cédula and photo hashes are **match-only, never returned**. Missing
   person responses carry only the public metadata the source registries already
   show, plus a link back to each source. Entity responses carry verified public
-  metadata, fuzzed coordinates, public contribution channels, active needs, and
-  link-backs. The API never destructively merges records.
+  metadata, fuzzed coordinates, public contribution channels, active needs,
+  audience/country grouping, and link-backs. The API never destructively merges
+  records.
 - **Status sync:** send `record.sourceUpdatedAt` when changing status. Older or
   untimestamped updates cannot overwrite a newer source status on an existing
   row, which keeps stale re-ingests from reopening or closing searches.
@@ -174,6 +175,8 @@ curl -s https://respuestave.org/api/v1/entities \
       "description":"Hospital receiving earthquake injuries",
       "estado":"Lara",
       "municipio":"Barquisimeto",
+      "audienceScope":"in_venezuela",
+      "countryCode":"VE",
       "lat":10.067,
       "lng":-69.347,
       "sourceUpdatedAt":"2026-06-26T18:30:00Z",
@@ -222,6 +225,8 @@ curl -X POST https://respuestave.org/api/v1/public-intake \
         "name": "Centro de acopio Doral",
         "estado": "Estados Unidos",
         "municipio": "Doral, FL",
+        "audienceScope": "outside_venezuela",
+        "countryCode": "US",
         "channels": [
           {"type": "supply_dropoff", "displayText": "Recibe insumos medicos, agua, comida e higiene"}
         ],
@@ -232,21 +237,23 @@ curl -X POST https://respuestave.org/api/v1/public-intake \
       }
     }],
     "data": {
-      "countryCode": "US",
       "originalText": "Pega aqui filas, texto o enlaces originales para revision."
     }
   }'
 ```
 
-The canonical `/entities` schema currently uses `estado`/`municipio` for public
-geography. Keep `countryCode` and outside-audience details in the restricted
-intake payload or native donation-center tables until first-class country fields
-are added to coordination entities.
+After review, operators can promote the candidate through `/entities` with
+`audienceScope: "outside_venezuela"` and `countryCode: "US"`, making it
+queryable from `/entities/changes` without relying on localized geography
+fields.
 
 ### Example — search and sync entities
 
 ```bash
 curl -s "https://respuestave.org/api/v1/entities?kind=hospital&estado=Lara&limit=25" \
+  -H "Authorization: Bearer $RVK"
+
+curl -s "https://respuestave.org/api/v1/entities?audienceScope=outside_venezuela&countryCode=US&limit=25" \
   -H "Authorization: Bearer $RVK"
 
 curl -s "https://respuestave.org/api/v1/entities/changes?since=2026-06-26T00:00:00Z&limit=100" \
