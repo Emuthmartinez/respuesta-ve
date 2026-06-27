@@ -65,16 +65,30 @@ export function AuthFinish({ code, error, nextPath, fallbackPath, supabaseConfig
       return;
     }
 
+    const continueIfSessionExists = async () => {
+      const { data, error: sessionError } = await sb.auth.getSession();
+      if (sessionError) console.error('auth finish session recovery error:', sessionError);
+      if (data.session) {
+        window.location.replace(nextPath);
+        return true;
+      }
+      return false;
+    };
+
     void sb.auth.exchangeCodeForSession(code)
       .then(({ error: exchangeError }) => {
         if (exchangeError) {
-          fail('auth code exchange error:', exchangeError);
+          void continueIfSessionExists().then((recovered) => {
+            if (!recovered) fail('auth code exchange error:', exchangeError);
+          });
           return;
         }
         window.location.replace(nextPath);
       })
       .catch((exchangeError: unknown) => {
-        fail('auth code exchange threw:', exchangeError);
+        void continueIfSessionExists().then((recovered) => {
+          if (!recovered) fail('auth code exchange threw:', exchangeError);
+        });
       });
   }, [code, error, fallbackPath, nextPath, s.fallback, supabaseConfig]);
 

@@ -94,7 +94,7 @@ export function AccountAccessForm({ variant, nextPath, backHref, supabaseConfig 
   const [notice, setNotice] = useState<React.ReactNode>(null);
   const [loading, setLoading] = useState(false);
 
-  const redirectTo = () => `${window.location.origin}/auth/finish?next=${encodeURIComponent(nextPath)}`;
+  const redirectTo = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
 
   useEffect(() => {
     const sb = getSupabaseBrowser(supabaseConfig);
