@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
+import type { SupabasePublicConfig } from '@/lib/supabase/client';
 import { useLocale } from '@/lib/locale-context';
 
 type AccessVariant = 'volunteer' | 'developer';
@@ -78,9 +79,10 @@ interface AccountAccessFormProps {
   variant: AccessVariant;
   nextPath: string;
   backHref: string;
+  supabaseConfig?: SupabasePublicConfig | null;
 }
 
-export function AccountAccessForm({ variant, nextPath, backHref }: AccountAccessFormProps) {
+export function AccountAccessForm({ variant, nextPath, backHref, supabaseConfig }: AccountAccessFormProps) {
   const locale = useLocale();
   const s = STR[locale];
   const page = s[variant];
@@ -98,7 +100,7 @@ export function AccountAccessForm({ variant, nextPath, backHref }: AccountAccess
     setErr('');
     setNotice(null);
     setLoading(true);
-    const sb = getSupabaseBrowser();
+    const sb = getSupabaseBrowser(supabaseConfig);
     if (!sb) {
       setErr(s.dbError);
       setLoading(false);
@@ -124,7 +126,7 @@ export function AccountAccessForm({ variant, nextPath, backHref }: AccountAccess
       return;
     }
     setLoading(true);
-    const sb = getSupabaseBrowser();
+    const sb = getSupabaseBrowser(supabaseConfig);
     if (!sb) {
       setErr(s.dbError);
       setLoading(false);
@@ -164,7 +166,7 @@ export function AccountAccessForm({ variant, nextPath, backHref }: AccountAccess
       return;
     }
     setLoading(true);
-    const sb = getSupabaseBrowser();
+    const sb = getSupabaseBrowser(supabaseConfig);
     if (!sb) {
       setErr(s.dbError);
       setLoading(false);

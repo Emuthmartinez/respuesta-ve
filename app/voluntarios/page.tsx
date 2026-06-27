@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getResponderProfile, isActiveVerified } from '@/lib/auth';
-import { isSupabaseConfigured } from '@/lib/supabase/client';
 import { credentialLabel, verificationLabel, tierLabel } from '@/lib/responder';
 import { SignOutButton } from '@/components/voluntarios/SignOutButton';
 import { getLocale, metaFor } from '@/lib/i18n-server';
+import { getSupabasePublicConfig } from '@/lib/supabase/server';
 
 export const generateMetadata = (): Promise<Metadata> => metaFor('voluntarios');
 
@@ -84,13 +84,14 @@ const STR = {
 export default async function VoluntariosPage() {
   const locale = await getLocale();
   const s = STR[locale];
+  const supabaseConfig = getSupabasePublicConfig();
   const { user, responder } = await getResponderProfile();
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <h1 className="text-2xl font-bold tracking-tight">{s.heading}</h1>
 
-      {!isSupabaseConfigured && (
+      {!supabaseConfig && (
         <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
           {s.dbNotConnected}
         </p>
@@ -140,7 +141,7 @@ export default async function VoluntariosPage() {
               <div className="text-sm text-zinc-500">{s.offerHelpDesc}</div>
             </Link>
           </div>
-          <SignOutButton />
+          <SignOutButton supabaseConfig={supabaseConfig} />
         </div>
       )}
 
@@ -224,7 +225,7 @@ export default async function VoluntariosPage() {
             </div>
           )}
 
-          <SignOutButton />
+          <SignOutButton supabaseConfig={supabaseConfig} />
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
+import type { SupabasePublicConfig } from '@/lib/supabase/client';
 import { useLocale } from '@/lib/locale-context';
 
 interface DeveloperKey {
@@ -105,7 +106,7 @@ function asKeys(value: unknown): DeveloperKey[] {
   return root?.ok && Array.isArray(root.items) ? root.items : [];
 }
 
-export function DeveloperApiKeyManager() {
+export function DeveloperApiKeyManager({ supabaseConfig }: { supabaseConfig?: SupabasePublicConfig | null }) {
   const locale = useLocale();
   const s = STR[locale];
   const [keys, setKeys] = useState<DeveloperKey[]>([]);
@@ -118,7 +119,7 @@ export function DeveloperApiKeyManager() {
   const [notes, setNotes] = useState('');
 
   const load = useCallback(async () => {
-    const sb = getSupabaseBrowser();
+    const sb = getSupabaseBrowser(supabaseConfig);
     if (!sb) {
       setMsg(s.dbError);
       setLoading(false);
@@ -128,7 +129,7 @@ export function DeveloperApiKeyManager() {
     if (error) setMsg(error.message);
     else setKeys(asKeys(data));
     setLoading(false);
-  }, [s.dbError]);
+  }, [s.dbError, supabaseConfig]);
 
   useEffect(() => {
     void (async () => {
@@ -142,7 +143,7 @@ export function DeveloperApiKeyManager() {
       setMsg(s.needName);
       return;
     }
-    const sb = getSupabaseBrowser();
+    const sb = getSupabaseBrowser(supabaseConfig);
     if (!sb) {
       setMsg(s.dbError);
       return;
@@ -175,7 +176,7 @@ export function DeveloperApiKeyManager() {
 
   async function revoke(id: string) {
     setBusy(id);
-    const sb = getSupabaseBrowser();
+    const sb = getSupabaseBrowser(supabaseConfig);
     if (sb) await sb.rpc('revoke_my_api_key', { p_id: id });
     setBusy(null);
     await load();
@@ -183,7 +184,7 @@ export function DeveloperApiKeyManager() {
 
   async function toggle(id: string, enabled: boolean) {
     setBusy(id);
-    const sb = getSupabaseBrowser();
+    const sb = getSupabaseBrowser(supabaseConfig);
     if (sb) await sb.rpc('set_my_api_key_enabled', { p_id: id, p_enabled: enabled });
     setBusy(null);
     await load();

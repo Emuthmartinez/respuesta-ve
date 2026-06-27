@@ -1,10 +1,15 @@
 import { createBrowserClient } from '@supabase/ssr';
 
+export interface SupabasePublicConfig {
+  url: string;
+  anonKey: string;
+}
+
 // Returns a browser Supabase client, or null when env isn't configured yet.
 // Null lets the UI fall back to sample data so the app runs pre-provision.
-export function getSupabaseBrowser() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+export function getSupabaseBrowser(config?: SupabasePublicConfig | null) {
+  const url = config?.url ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = config?.anonKey ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createBrowserClient(url, key);
 }
