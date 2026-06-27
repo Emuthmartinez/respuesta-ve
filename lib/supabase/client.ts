@@ -23,7 +23,13 @@ export function getSupabaseBrowser(config?: SupabasePublicConfig | null) {
   const url = runtimeConfig?.url ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = runtimeConfig?.anonKey ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
-  return createBrowserClient(url, key);
+  return createBrowserClient(url, key, {
+    auth: {
+      // OAuth codes are one-time-use. /auth/finish consumes them explicitly so
+      // shared UI like the header cannot race that exchange while mounting.
+      detectSessionInUrl: false,
+    },
+  });
 }
 
 export const isSupabaseConfigured =
