@@ -86,6 +86,16 @@ returns only a receipt (`status: received_for_review`) plus `statusUrl`; raw
 payloads, contact fields, notes, and URLs remain in the restricted operator queue
 and are not published by the API.
 
+Operational note: `POST /api/v1/public-intake` calls a guarded Supabase RPC from
+the Next route. Set the server-only `PUBLIC_INTAKE_RPC_SECRET` Worker secret to
+the value whose SHA-256 hash is stored in `public_intake_runtime_secrets` so
+public clients cannot bypass route-level throttling by calling the RPC directly.
+Coordinators list restricted queue rows with
+`list_public_data_intake_submissions(p_status, p_limit, p_before)`, then mark
+rows triaged/promoted/ignored/spam with `review_public_data_intake_submission`.
+Trusted cleanup workers can call the same RPCs with `p_rpc_secret`; public
+callers without a coordinator session or that secret receive `not_coordinator`.
+
 Poll the returned `statusUrl` until `status` changes:
 
 ```bash

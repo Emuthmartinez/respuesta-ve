@@ -37,6 +37,11 @@ export interface PublicIntakeSubmission {
 }
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"'`)\]}]+/gi;
+const TEXT_ENCODER = new TextEncoder();
+
+export function utf8ByteLength(value: string): number {
+  return TEXT_ENCODER.encode(value).byteLength;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -142,7 +147,7 @@ export async function readPublicIntakePayload(req: Request): Promise<PublicIntak
     return { ok: false, error: 'invalid_json' };
   }
   if (!rawText.trim()) return { ok: false, error: 'empty_body' };
-  if (rawText.length > MAX_PUBLIC_INTAKE_BODY_BYTES) return { ok: false, error: 'payload_too_large' };
+  if (utf8ByteLength(rawText) > MAX_PUBLIC_INTAKE_BODY_BYTES) return { ok: false, error: 'payload_too_large' };
 
   const contentType = req.headers.get('content-type') ?? '';
   const looksJson = /json/i.test(contentType) || /^[\[{"]/.test(rawText.trim());
@@ -180,7 +185,7 @@ export function buildPublicIntakeSubmission(payload: unknown, rawText: string, c
     payloadFormat,
     submissionKind,
     payload,
-    payloadSizeChars: rawText.length,
+    payloadSizeChars: utf8ByteLength(rawText),
     urlsToReview: [...urls],
     tags: pickTags(root),
     submittedByPrivate: pickText(root, ['submittedBy', 'submitted_by', 'name', 'reporterName'], 200),

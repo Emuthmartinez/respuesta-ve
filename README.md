@@ -20,7 +20,7 @@ humanitarian crisis.
 
 ```bash
 pnpm install
-cp .env.local.example .env.local   # fill in Supabase keys + REPORT_IP_SALT
+cp .env.local.example .env.local   # fill in Supabase keys + server secrets
 pnpm dev                           # http://localhost:3000
 ```
 
