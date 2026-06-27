@@ -10,7 +10,10 @@ trusted backend instead of fragmenting into stale crisis data silos.
   `429` + `Retry-After`. Remaining quota in `X-RateLimit-Remaining-Minute/Day`.
 - **No-key dropbox:** `POST /api/v1/public-intake` accepts public JSON, text,
   CSV, URL-list leads, and small typed-file envelopes up to 5 MiB for restricted
-  operator review. The receipt includes `statusUrl` for polling.
+  operator review. Send `sourceRecordId`, `contentFingerprint`,
+  `processingHints`, and `canonicalCandidates` when available so operators can
+  dedupe/clean and promote through `/persons` or `/entities` without losing
+  source provenance. The receipt includes `statusUrl` for polling.
 - **PII:** cédula and photo hashes are **match-only, never returned**. Missing
   person responses carry only the public metadata the source registries already
   show, plus a link back to each source. Entity responses carry verified public
@@ -49,10 +52,31 @@ shape to the restricted review queue without an API key:
 curl -X POST https://respuestave.org/api/v1/public-intake \
   -H 'content-type: application/json' \
   -d '{
-    "source": "discord",
-    "kind": "url_list",
-    "data": ["https://example.org/report/123"],
-    "note": "Any public lead or scrape target that operators should review"
+    "eventId": "venezuela-earthquakes-2026",
+    "source": "mapa-emergencia-rescate",
+    "sourceRecordId": "mapa-emergencia-rescate:missing_person:abc123",
+    "contentFingerprint": "sha256:...",
+    "kind": "person",
+    "audienceScope": "in_venezuela",
+    "processingHints": {
+      "dedupeMode": "candidate_review_not_auto_merge",
+      "promotionPath": "/api/v1/persons",
+      "cleanupPipeline": ["normalize_person", "match_person", "dedupe_review", "operator_promote_safe_records"]
+    },
+    "canonicalCandidates": [{
+      "kind": "person",
+      "externalId": "mapa-emergencia-rescate:missing_person:abc123",
+      "externalUrl": "https://terremotovenezuela.app/personas",
+      "record": {
+        "name": "Nombre reportado",
+        "age": 31,
+        "estado": "La Guaira",
+        "status": "missing"
+      }
+    }],
+    "data": {
+      "note": "Any public lead, scrape target, row, photo metadata, or JSON shape operators should review"
+    }
   }'
 ```
 
@@ -68,7 +92,8 @@ curl -s "https://respuestave.org/api/v1/public-intake?id=<receipt-id>"
 ```
 
 Once operators promote a submission into canonical records, partners fetch the
-normalized public data with cursor polling:
+normalized public data with cursor polling. Receipt polling is only queue status;
+the canonical truth is in these feeds:
 
 ```bash
 curl -s "https://respuestave.org/api/v1/persons/changes?since=2026-06-27T00:00:00Z" \
