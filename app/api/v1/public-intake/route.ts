@@ -51,7 +51,7 @@ export async function GET(req: Request) {
     ok: true,
     endpoint: 'POST /api/v1/public-intake',
     statusEndpoint: 'GET /api/v1/public-intake?id=<receipt-id>',
-    auth: 'No API key required.',
+    access: 'Public submission route for restricted operator review.',
     maxBytes: MAX_PUBLIC_INTAKE_BODY_BYTES,
     accepts: ['application/json', 'text/plain', 'text/csv', 'JSON envelopes with small file data URLs/text extracts'],
     status: 'received_for_review',

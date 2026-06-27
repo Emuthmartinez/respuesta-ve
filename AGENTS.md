@@ -130,7 +130,7 @@ from the public until a coordinator approves it via a coordinator-only RPC. This
 gate — not auth — is the primary spam/abuse defense, which is why anonymous
 submission is acceptable.
 
-**No-key public intake cleanup.** `/api/v1/public-intake` is a restricted queue,
+**Public intake cleanup.** `/api/v1/public-intake` is a restricted queue,
 not a canonical write path. Preserve partner-provided `sourceRecordId`,
 `contentFingerprint`, `processingHints`, and `canonicalCandidates` in the stored
 payload; never echo them in receipts. Operators and workers use those hints to
@@ -140,6 +140,12 @@ hospitals, shelters, supply hubs, public channels, and needs. Hospital patients,
 raw photos, private contacts, and medical notes remain restricted unless a
 coordinator maps them to an allowed public projection. Candidate duplicates are
 review candidates only; do not auto-merge or auto-resolve from public intake.
+Outside-Venezuela acopio/donation/resource leads should be mapped to
+`donation_center`, `supply_hub`, `organization`, or `official_channel` entity
+candidates with `audienceScope: "outside_venezuela"` in the intake wrapper.
+Preserve source URLs and country details in restricted payloads or native
+donation-center tables; `/api/v1/entities` still uses `estado`/`municipio` for
+public geography until first-class country fields are added.
 
 **Ownership = management token (no account).** Citizen-creatable entities mint a
 one-time `randomBytes(24)` token at submit time; only its sha256 is stored as

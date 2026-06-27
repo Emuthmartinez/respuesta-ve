@@ -8,7 +8,7 @@ trusted backend instead of fragmenting into stale crisis data silos.
 - **Spec:** `GET /api/v1/openapi` (OpenAPI 3.1) · **Discovery:** `GET /api/v1`
 - **Auth:** `Authorization: Bearer <key>` (or `x-api-key`). Per-key rate limits →
   `429` + `Retry-After`. Remaining quota in `X-RateLimit-Remaining-Minute/Day`.
-- **No-key dropbox:** `POST /api/v1/public-intake` accepts public JSON, text,
+- **Public intake queue:** `POST /api/v1/public-intake` accepts public JSON, text,
   CSV, URL-list leads, and small typed-file envelopes up to 5 MiB for restricted
   operator review. Send `sourceRecordId`, `contentFingerprint`,
   `processingHints`, and `canonicalCandidates` when available so operators can
@@ -40,13 +40,13 @@ trusted backend instead of fragmenting into stale crisis data silos.
 | POST | `/entities` | `ingest` | Federate hospitals, clinics, shelters, supply hubs, orgs, needs, and public channels. |
 | GET | `/entities?q=&kind=&estado=` | `search` | Search verified crisis entities. |
 | GET | `/entities/changes?since=` | `search` | Poll verified public entities changed since your last cursor. |
-| POST | `/public-intake` | public | No-key review queue for any public lead/data shape. |
+| POST | `/public-intake` | public | Public review queue for any lead/data shape. |
 | GET | `/badge?domain=` | public | Check whether a domain is a verified federation partner. |
 
-### Example — no-key public intake
+### Example — public intake
 
-Anyone can send a lead, URL list, scraped text, spreadsheet row, or arbitrary JSON
-shape to the restricted review queue without an API key:
+Send a lead, URL list, scraped text, spreadsheet row, or arbitrary JSON shape to
+the restricted review queue:
 
 ```bash
 curl -X POST https://respuestave.org/api/v1/public-intake \
@@ -192,6 +192,56 @@ curl -s https://respuestave.org/api/v1/entities \
 The response returns the canonical entity id, whether the source row was inserted,
 updated, or ignored as stale, and the verification status. Public reads show only
 verified, unexpired entity projections.
+
+### Example — outside-Venezuela acopio/resource lead
+
+USA collection centers, donation links, and diaspora help posts can enter
+through public intake as `entity` leads while operators verify the source and
+decide whether to promote them to `/entities` or the donation-center directory.
+
+```bash
+curl -X POST https://respuestave.org/api/v1/public-intake \
+  -H 'content-type: application/json' \
+  -d '{
+    "eventId": "venezuela-earthquakes-2026",
+    "source": "discord:respuesta-ve",
+    "sourceRecordId": "discord:respuesta-ve:usa-acopio-doral",
+    "kind": "entity",
+    "audienceScope": "outside_venezuela",
+    "processingHints": {
+      "dedupeMode": "candidate_review_not_auto_merge",
+      "promotionPath": "/api/v1/entities",
+      "cleanupPipeline": ["normalize_entity", "dedupe_entity_by_name_area", "operator_verify_source"]
+    },
+    "canonicalCandidates": [{
+      "kind": "entity",
+      "externalId": "discord:respuesta-ve:usa-acopio-doral",
+      "sourceUrl": "https://example.org/source-post",
+      "entity": {
+        "kind": "donation_center",
+        "name": "Centro de acopio Doral",
+        "estado": "Estados Unidos",
+        "municipio": "Doral, FL",
+        "channels": [
+          {"type": "supply_dropoff", "displayText": "Recibe insumos medicos, agua, comida e higiene"}
+        ],
+        "needs": [
+          {"category": "medical_supplies", "title": "Primeros auxilios"},
+          {"category": "food", "title": "Alimentos no perecederos"}
+        ]
+      }
+    }],
+    "data": {
+      "countryCode": "US",
+      "originalText": "Pega aqui filas, texto o enlaces originales para revision."
+    }
+  }'
+```
+
+The canonical `/entities` schema currently uses `estado`/`municipio` for public
+geography. Keep `countryCode` and outside-audience details in the restricted
+intake payload or native donation-center tables until first-class country fields
+are added to coordination entities.
 
 ### Example — search and sync entities
 

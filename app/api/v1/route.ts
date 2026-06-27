@@ -18,7 +18,7 @@ export function GET() {
       entities: 'POST/GET /api/v1/entities — federate/search verified hospitals, shelters, orgs, needs, and channels',
       entityChanges: 'GET /api/v1/entities/changes?since= — changed verified crisis entities for sync',
       badge: 'GET /api/v1/badge?domain= — public partner verification badge lookup',
-      publicIntake: 'POST /api/v1/public-intake — no-key dropbox for any JSON/text/CSV/url-list that operators should review',
+      publicIntake: 'POST /api/v1/public-intake — public intake queue for JSON/text/CSV/url-list data that operators should review',
     },
     auth: 'Partner endpoints use Authorization: Bearer <api-key> (or x-api-key). /public-intake and /badge require no key.',
     scopes: ['score', 'match', 'search', 'ingest'],
