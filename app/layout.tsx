@@ -7,6 +7,7 @@ import { t } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n-server';
 import { LocaleProvider } from '@/lib/locale-context';
 import { CONTEXT_SCRIPT } from '@/lib/site-context';
+import { getSupabasePublicConfig } from '@/lib/supabase/server';
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://respuesta-ve.e-muth-martinez.workers.dev';
 const DESC =
@@ -77,6 +78,10 @@ const THEME_SCRIPT = `(function(){try{var c=document.cookie.match(/(?:^|;\\s*)th
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();
   const d = t(locale);
+  const supabaseConfig = getSupabasePublicConfig();
+  const supabaseConfigScript = supabaseConfig
+    ? `window.__RESPUESTA_SUPABASE_CONFIG__=${JSON.stringify(supabaseConfig).replace(/</g, '\\u003c')};`
+    : null;
 
   // Read theme cookie server-side so the initial HTML class matches the cookie.
   const jar = await cookies();
@@ -91,6 +96,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {/* Must be first in <head> so they run before any CSS paint */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: CONTEXT_SCRIPT }} />
+        {supabaseConfigScript && <script dangerouslySetInnerHTML={{ __html: supabaseConfigScript }} />}
       </head>
       <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-100">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />

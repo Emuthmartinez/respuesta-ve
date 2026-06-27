@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/lib/locale-context';
 
@@ -16,7 +17,7 @@ export interface NavItem {
   ctx?: 'in' | 'out';
 }
 
-export function MobileNav({ nav }: { nav: NavItem[] }) {
+export function MobileNav({ nav, children }: { nav: NavItem[]; children?: ReactNode }) {
   const locale = useLocale();
   const s = STR[locale];
   const [open, setOpen] = useState(false);
@@ -109,6 +110,11 @@ export function MobileNav({ nav }: { nav: NavItem[] }) {
               </Link>
             ))}
           </nav>
+          {children && (
+            <div className="border-t border-black/10 p-1 dark:border-white/10">
+              {children}
+            </div>
+          )}
         </div>
       )}
     </div>

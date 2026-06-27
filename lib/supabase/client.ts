@@ -5,11 +5,23 @@ export interface SupabasePublicConfig {
   anonKey: string;
 }
 
+declare global {
+  interface Window {
+    __RESPUESTA_SUPABASE_CONFIG__?: SupabasePublicConfig;
+  }
+}
+
+function getInjectedConfig(): SupabasePublicConfig | null {
+  if (typeof window === 'undefined') return null;
+  return window.__RESPUESTA_SUPABASE_CONFIG__ ?? null;
+}
+
 // Returns a browser Supabase client, or null when env isn't configured yet.
 // Null lets the UI fall back to sample data so the app runs pre-provision.
 export function getSupabaseBrowser(config?: SupabasePublicConfig | null) {
-  const url = config?.url ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = config?.anonKey ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const runtimeConfig = config ?? getInjectedConfig();
+  const url = runtimeConfig?.url ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = runtimeConfig?.anonKey ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createBrowserClient(url, key);
 }
