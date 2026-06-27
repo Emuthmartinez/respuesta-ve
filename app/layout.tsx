@@ -10,7 +10,7 @@ import { CONTEXT_SCRIPT } from '@/lib/site-context';
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://respuesta-ve.e-muth-martinez.workers.dev';
 const DESC =
-  'Plataforma comunitaria de coordinación tras el terremoto en Venezuela: mapa de edificios dañados, inspección estructural, donaciones verificadas, ayuda mutua y búsqueda de personas.';
+  'Backend federado y superficie pública de coordinación tras el terremoto en Venezuela: datos con procedencia, revisión, deduplicación, donaciones, ayuda mutua y búsqueda de personas.';
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -104,6 +104,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <p className="text-center">
                 <a href="/desarrolladores" className="font-medium text-zinc-600 hover:text-red-600 hover:underline dark:text-zinc-400">
                   {locale === 'en' ? 'Developer API · MCP' : 'API para desarrolladores · MCP'}
+                </a>
+                <span className="mx-2 text-zinc-300 dark:text-zinc-700">·</span>
+                <a href="/red" className="font-medium text-zinc-600 hover:text-red-600 hover:underline dark:text-zinc-400">
+                  {locale === 'en' ? 'Powered partner network' : 'Red de sitios conectados'}
                 </a>
               </p>
             </div>

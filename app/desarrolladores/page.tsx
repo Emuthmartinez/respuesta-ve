@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { FederationNetwork } from '@/components/FederationNetwork';
 import { getLocale } from '@/lib/i18n-server';
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://respuestave.org';
@@ -457,6 +458,10 @@ export default async function DesarrolladoresPage() {
           ))}
         </div>
       </section>
+
+      <div className="-mx-4 mt-8 sm:-mx-6">
+        <FederationNetwork locale={locale} variant="inline" />
+      </div>
 
       <section className="mt-10 rounded-lg bg-amber-50 p-4 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:ring-amber-900">
         <h2 className="text-sm font-semibold text-amber-950 dark:text-amber-100">{s.privacyTitle}</h2>
