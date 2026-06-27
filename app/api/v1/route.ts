@@ -6,7 +6,7 @@ export const dynamic = 'force-static';
 export function GET() {
   return NextResponse.json({
     name: 'Respuesta VE — Humanitarian Federation API',
-    version: '1.2.0',
+    version: '1.3.0',
     openapi: '/api/v1/openapi',
     endpoints: {
       discovery: 'GET /api/v1 — machine-readable API discovery',
@@ -20,10 +20,10 @@ export function GET() {
       entities: 'POST/GET /api/v1/entities — federate/search verified hospitals, shelters, orgs, needs, and channels',
       entityChanges: 'GET /api/v1/entities/changes?since= — changed verified crisis entities for sync',
       badge: 'GET /api/v1/badge?domain= — public partner verification badge lookup',
-      publicIntake: 'GET/POST /api/v1/public-intake — help payload + intake queue for JSON/text/CSV/url-list data that operators should review',
-      publicIntakeReceipt: 'GET /api/v1/public-intake?id= — receipt-safe processing status for a public intake submission',
+      publicIntake: 'GET/POST /api/v1/public-intake — help payload + authenticated intake queue for JSON/text/CSV/url-list data that operators should review',
+      publicIntakeReceipt: 'GET /api/v1/public-intake?id= — authenticated receipt-safe processing status for an intake submission',
     },
-    auth: 'Partner endpoints use Authorization: Bearer <api-key> (or x-api-key). See the OpenAPI spec for endpoint-specific access.',
+    auth: 'Partner endpoints use Authorization: Bearer <api-key> (or x-api-key). Create a key from /desarrolladores/claves after signing in. See the OpenAPI spec for endpoint-specific access.',
     scopes: ['score', 'match', 'search', 'ingest'],
     pii_policy: 'Cédula and photo hashes are used only to find matches and are NEVER returned. Entity responses carry verified public metadata, fuzzed coordinates, needs, public channels, audience/country grouping, and link-backs only. Grouping is advisory; records are never destructively merged. Status sync is timestamp-aware to avoid stale overwrites.',
   });

@@ -8,13 +8,13 @@ const STR = {
   es: {
     heading: 'Claves de API',
     myProfile: 'Mi perfil',
-    desc: 'Emite y revoca claves para que otras plataformas y agentes usen la API de deduplicación. La clave se muestra una sola vez; guárdala bien. El motor solo almacena su hash.',
+    desc: 'Emite, revisa y revoca claves para que otras plataformas y agentes usen la API. Tambien veras claves creadas por cuentas de desarrollador. La clave se muestra una sola vez; el motor solo almacena su hash.',
     docs: 'Ver documentación de la API →',
   },
   en: {
     heading: 'API keys',
     myProfile: 'My profile',
-    desc: 'Issue and revoke keys for other platforms and agents to use the deduplication API. The key is shown only once — store it safely. The engine stores only its hash.',
+    desc: 'Issue, review, and revoke keys for other platforms and agents using the API. Developer-account keys also appear here. The key is shown only once; the engine stores only its hash.',
     docs: 'View API documentation →',
   },
 } as const;
