@@ -32,6 +32,11 @@ function withStatusUrl(req: Request, receipt: IntakeReceipt): IntakeReceipt {
   return url ? { ...receipt, statusUrl: url } : receipt;
 }
 
+function publicIntakeRpcSecret(): string | null {
+  const secret = process.env.PUBLIC_INTAKE_RPC_SECRET?.trim();
+  return secret || null;
+}
+
 export async function GET(req: Request) {
   const id = new URL(req.url).searchParams.get('id');
   if (id) {
@@ -104,8 +109,11 @@ export async function POST(req: Request) {
   const submission = buildPublicIntakeSubmission(parsed.payload, parsed.rawText, parsed.contentType);
   const sb = await getSupabaseServer();
   if (!sb) return apiError('service_unavailable', 503);
+  const rpcSecret = publicIntakeRpcSecret();
+  if (!rpcSecret) return apiError('service_unavailable', 503);
 
   const { data, error } = await sb.rpc('submit_public_data_intake', {
+    p_rpc_secret: rpcSecret,
     p_ip_hash: ipHash(req),
     p_event_id: submission.eventId,
     p_source: submission.source,
@@ -128,7 +136,7 @@ export async function POST(req: Request) {
   const result = data as IntakeReceipt | null;
   if (!result?.ok) {
     const code = result?.error ?? 'intake_rejected';
-    return apiError(code, code === 'rate_limited' ? 429 : 400);
+    return apiError(code, code === 'rate_limited' ? 429 : code === 'forbidden' ? 503 : 400);
   }
 
   return NextResponse.json(withStatusUrl(req, result), { status: 202, headers: { 'Cache-Control': 'no-store' } });

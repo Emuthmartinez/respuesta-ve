@@ -17,8 +17,8 @@ Use this before flipping the GitHub repository visibility to public.
 
 ## Production gates before inviting non-technical users
 
-- [ ] Set `REPORT_IP_SALT`, `INGEST_TOKEN`, and `RUN_TOKEN` with Wrangler
-      secrets, not tracked config.
+- [ ] Set `REPORT_IP_SALT`, `PUBLIC_INTAKE_RPC_SECRET`, `INGEST_TOKEN`, and
+      `RUN_TOKEN` with Wrangler secrets, not tracked config.
 - [ ] Configure Supabase Auth redirect allowlist for every production domain.
 - [ ] Replace raw OSM tiles with a production map-tile provider.
 - [ ] Confirm no sample/test rows are public:
