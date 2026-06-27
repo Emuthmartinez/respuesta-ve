@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getResponderProfile, isActiveVerified } from '@/lib/auth';
+import { getResponderProfile, isActiveVerified, signInPath } from '@/lib/auth';
 import { InspectionQueue } from '@/components/voluntarios/InspectionQueue';
 import { Disclaimer } from '@/components/Disclaimer';
 import { getLocale, metaFor } from '@/lib/i18n-server';
@@ -23,7 +23,7 @@ export default async function ColaPage() {
   const locale = await getLocale();
   const s = STR[locale];
   const { user, responder } = await getResponderProfile();
-  if (!user) redirect('/voluntarios/acceder');
+  if (!user) redirect(signInPath('/voluntarios/cola'));
   if (!responder || !isActiveVerified(responder)) redirect('/voluntarios');
 
   const isCoordinator = responder.is_coordinator || responder.tier === 'senior';

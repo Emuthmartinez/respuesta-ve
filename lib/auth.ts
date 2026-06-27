@@ -39,3 +39,25 @@ export async function getResponderProfile(): Promise<{
 export function isActiveVerified(r: ResponderProfile | null): boolean {
   return !!r && r.verification === 'verified' && !r.suspended_at;
 }
+
+// Default landing page when no (valid) destination is supplied.
+export const DEFAULT_NEXT = '/voluntarios';
+
+// Validates a post-login `next` target. Only same-origin *relative* paths are
+// allowed — this is the open-redirect guard for the sign-in flow. Anything
+// absolute (`https://…`), protocol-relative (`//evil.com`), or backslash-tricked
+// (`/\evil.com`) falls back to DEFAULT_NEXT.
+export function safeNext(raw: string | null | undefined): string {
+  if (!raw || !raw.startsWith('/')) return DEFAULT_NEXT;
+  if (raw.startsWith('//') || raw.startsWith('/\\')) return DEFAULT_NEXT;
+  return raw;
+}
+
+// Builds the sign-in URL for a protected page, remembering where the user was
+// headed so the callback can return them there after authenticating.
+export function signInPath(next?: string): string {
+  const target = safeNext(next);
+  return target === DEFAULT_NEXT
+    ? '/voluntarios/acceder'
+    : `/voluntarios/acceder?next=${encodeURIComponent(target)}`;
+}

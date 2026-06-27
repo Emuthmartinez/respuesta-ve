@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getResponderProfile, isActiveVerified } from '@/lib/auth';
+import { getResponderProfile, isActiveVerified, signInPath } from '@/lib/auth';
 import { AssessmentForm } from '@/components/voluntarios/AssessmentForm';
 import { Disclaimer } from '@/components/Disclaimer';
 import { getLocale, metaFor } from '@/lib/i18n-server';
@@ -27,12 +27,14 @@ export default async function EvaluarPage({
 }) {
   const locale = await getLocale();
   const s = STR[locale];
-  const { user, responder } = await getResponderProfile();
-  if (!user) redirect('/voluntarios/acceder');
-  if (!responder || !isActiveVerified(responder)) redirect('/voluntarios');
-
   const { id } = await params;
   const { req } = await searchParams;
+  const { user, responder } = await getResponderProfile();
+  if (!user) {
+    const selfPath = `/voluntarios/evaluar/${id}${req ? `?req=${encodeURIComponent(req)}` : ''}`;
+    redirect(signInPath(selfPath));
+  }
+  if (!responder || !isActiveVerified(responder)) redirect('/voluntarios');
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">

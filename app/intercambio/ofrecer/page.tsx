@@ -97,7 +97,7 @@ export default function OfrecerPage() {
     }
     sb.auth.getUser().then(({ data }) => {
       if (!data.user) {
-        router.replace('/voluntarios/acceder');
+        router.replace('/voluntarios/acceder?next=' + encodeURIComponent('/intercambio/ofrecer'));
         return;
       }
       setUid(data.user.id);
