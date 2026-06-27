@@ -33,6 +33,7 @@ const dict = {
       exchange: 'Intercambio',
       resources: 'Recursos',
       people: 'Personas',
+      network: 'Red',
       debunks: 'Desmentidos',
       volunteers: 'Voluntarios',
     },
@@ -40,7 +41,7 @@ const dict = {
       default: {
         title: 'Respuesta VE — Mapa de daños · Terremoto Venezuela 2026',
         description:
-          'Plataforma comunitaria de coordinación tras el terremoto en Venezuela: mapa de edificios dañados, inspección estructural, donaciones verificadas, ayuda mutua y búsqueda de personas.',
+          'Backend federado y superficie pública de coordinación tras el terremoto en Venezuela: datos con procedencia, revisión, deduplicación, donaciones, ayuda mutua y búsqueda de personas.',
       },
       afuera: {
         title: 'Ayuda desde el exterior — Respuesta VE',
@@ -217,6 +218,7 @@ const dict = {
       exchange: 'Exchange',
       resources: 'Resources',
       people: 'People',
+      network: 'Network',
       debunks: 'Debunks',
       volunteers: 'Volunteers',
     },
@@ -224,7 +226,7 @@ const dict = {
       default: {
         title: 'Respuesta VE — Damage map · Venezuela Earthquake 2026',
         description:
-          'Community coordination platform after the earthquake in Venezuela: damaged-building map, structural inspection, verified donations, mutual aid, and finding missing people.',
+          'Federated backend and public coordination surface after the earthquake in Venezuela: source-aware data, review, dedupe, donations, mutual aid, and finding missing people.',
       },
       afuera: {
         title: 'Help from abroad — Respuesta VE',

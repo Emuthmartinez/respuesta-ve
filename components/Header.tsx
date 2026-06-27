@@ -19,6 +19,7 @@ export async function Header() {
     { href: '/intercambio', label: d.nav.exchange, ctx: 'in' },
     { href: '/afuera', label: d.nav.donate, ctx: 'out' },
     { href: '/personas', label: d.nav.people },
+    { href: '/red', label: d.nav.network },
     { href: '/voluntarios', label: d.nav.volunteers },
     { href: '/desmentidos', label: d.nav.debunks },
   ];
