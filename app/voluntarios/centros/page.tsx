@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getResponderProfile, isActiveVerified } from '@/lib/auth';
+import { getResponderProfile, isActiveVerified, signInPath } from '@/lib/auth';
 import { DonationCenterQueue } from '@/components/voluntarios/DonationCenterQueue';
 import { OrganizationQueue } from '@/components/voluntarios/OrganizationQueue';
 import { getLocale, metaFor } from '@/lib/i18n-server';
@@ -31,7 +31,7 @@ export default async function CentrosPage() {
   const locale = await getLocale();
   const s = STR[locale];
   const { user, responder } = await getResponderProfile();
-  if (!user) redirect('/voluntarios/acceder');
+  if (!user) redirect(signInPath('/voluntarios/centros'));
   if (!responder || !isActiveVerified(responder)) redirect('/voluntarios');
   if (!(responder.is_coordinator || responder.tier === 'senior')) redirect('/voluntarios');
 

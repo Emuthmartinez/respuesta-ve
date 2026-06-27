@@ -116,7 +116,7 @@ export default function RegistrarsePage() {
     }
     sb.auth.getUser().then(({ data }) => {
       if (!data.user) {
-        router.replace('/voluntarios/acceder');
+        router.replace('/voluntarios/acceder?next=' + encodeURIComponent('/voluntarios/registrarse'));
         return;
       }
       setUid(data.user.id);

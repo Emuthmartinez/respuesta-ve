@@ -41,10 +41,14 @@ export function AuthStatus({ initialEmail = null, mode = 'desktop', supabaseConf
     if (!sb) return;
 
     let mounted = true;
-    void sb.auth.getUser().then(({ data, error }) => {
+    // getSession() reads the stored session without a server round-trip and
+    // returns null cleanly when signed out — unlike getUser(), which raises
+    // AuthSessionMissingError for every logged-out visitor. The validated email
+    // for the first paint already comes from the server via initialEmail.
+    void sb.auth.getSession().then(({ data, error }) => {
       if (!mounted) return;
-      if (error) console.error('auth user lookup error:', error);
-      setEmail(data.user?.email ?? null);
+      if (error) console.error('auth session lookup error:', error);
+      setEmail(data.session?.user?.email ?? null);
     });
 
     const {
