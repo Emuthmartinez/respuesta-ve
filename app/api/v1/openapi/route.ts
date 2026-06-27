@@ -213,7 +213,7 @@ const SPEC = {
   openapi: '3.1.0',
   info: {
     title: 'Respuesta VE — Humanitarian Federation API',
-    version: '1.1.0',
+    version: '1.2.0',
     description:
       'Match and deduplicate missing-person records, and federate verified crisis entities for the 2026 Venezuela earthquake response. ' +
       'PII policy: cédula and photo hashes are used only to FIND matches and are never returned; responses carry only the ' +
@@ -247,6 +247,22 @@ const SPEC = {
     },
   },
   paths: {
+    '/': {
+      get: {
+        summary: 'Discover the Respuesta VE federation API.',
+        description: 'Machine-readable entry point with version, endpoint map, scopes, auth hints, and privacy policy. Agents should fetch this before choosing a route.',
+        security: [],
+        responses: { '200': { description: 'Discovery JSON for the API.' } },
+      },
+    },
+    '/openapi': {
+      get: {
+        summary: 'Fetch the OpenAPI 3.1 contract.',
+        description: 'Complete schema and route contract for agent and partner integrations.',
+        security: [],
+        responses: { '200': { description: 'OpenAPI 3.1 document.' } },
+      },
+    },
     '/score': {
       post: {
         summary: 'Score a record against caller-supplied candidates (pure, no DB).',

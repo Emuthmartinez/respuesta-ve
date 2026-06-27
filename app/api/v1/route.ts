@@ -9,6 +9,8 @@ export function GET() {
     version: '1.2.0',
     openapi: '/api/v1/openapi',
     endpoints: {
+      discovery: 'GET /api/v1 — machine-readable API discovery',
+      openapi: 'GET /api/v1/openapi — OpenAPI 3.1 contract',
       score: 'POST /api/v1/score — pure scoring on caller-supplied records',
       match: 'POST /api/v1/match — match against the live federated index',
       ingest: 'POST /api/v1/persons — dedupe-on-ingest + federate (link-back required)',
@@ -18,7 +20,8 @@ export function GET() {
       entities: 'POST/GET /api/v1/entities — federate/search verified hospitals, shelters, orgs, needs, and channels',
       entityChanges: 'GET /api/v1/entities/changes?since= — changed verified crisis entities for sync',
       badge: 'GET /api/v1/badge?domain= — public partner verification badge lookup',
-      publicIntake: 'POST /api/v1/public-intake — intake queue for JSON/text/CSV/url-list data that operators should review',
+      publicIntake: 'GET/POST /api/v1/public-intake — help payload + intake queue for JSON/text/CSV/url-list data that operators should review',
+      publicIntakeReceipt: 'GET /api/v1/public-intake?id= — receipt-safe processing status for a public intake submission',
     },
     auth: 'Partner endpoints use Authorization: Bearer <api-key> (or x-api-key). See the OpenAPI spec for endpoint-specific access.',
     scopes: ['score', 'match', 'search', 'ingest'],
