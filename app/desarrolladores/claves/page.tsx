@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { DeveloperApiKeyManager } from '@/components/DeveloperApiKeyManager';
 import { SignOutButton } from '@/components/voluntarios/SignOutButton';
 import { getLocale } from '@/lib/i18n-server';
-import { getSupabaseServer } from '@/lib/supabase/server';
+import { getSupabasePublicConfig, getSupabaseServer } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
   title: 'Mis claves de API · Respuesta VE',
@@ -31,6 +31,7 @@ const STR = {
 export default async function DeveloperKeysPage() {
   const locale = await getLocale();
   const s = STR[locale];
+  const supabaseConfig = getSupabasePublicConfig();
   const sb = await getSupabaseServer();
 
   if (!sb) {
@@ -59,11 +60,11 @@ export default async function DeveloperKeysPage() {
         </div>
         <div className="flex shrink-0 items-center gap-3 text-xs">
           <Link href="/desarrolladores" className="font-medium text-red-600 hover:underline">{s.docs}</Link>
-          <SignOutButton redirectTo="/desarrolladores" />
+          <SignOutButton redirectTo="/desarrolladores" supabaseConfig={supabaseConfig} />
         </div>
       </div>
 
-      <DeveloperApiKeyManager />
+      <DeveloperApiKeyManager supabaseConfig={supabaseConfig} />
     </div>
   );
 }

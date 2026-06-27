@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
+import type { SupabasePublicConfig } from '@/lib/supabase/client';
 import { useLocale } from '@/lib/locale-context';
 
 const STR = {
@@ -9,12 +10,18 @@ const STR = {
   en: { signOut: 'Sign out' },
 } as const;
 
-export function SignOutButton({ redirectTo = '/voluntarios' }: { redirectTo?: string }) {
+export function SignOutButton({
+  redirectTo = '/voluntarios',
+  supabaseConfig,
+}: {
+  redirectTo?: string;
+  supabaseConfig?: SupabasePublicConfig | null;
+}) {
   const locale = useLocale();
   const s = STR[locale];
   const router = useRouter();
   async function signOut() {
-    const sb = getSupabaseBrowser();
+    const sb = getSupabaseBrowser(supabaseConfig);
     if (sb) await sb.auth.signOut();
     router.push(redirectTo);
     router.refresh();

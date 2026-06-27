@@ -1,14 +1,21 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import type { SupabasePublicConfig } from './client';
+
+export function getSupabasePublicConfig(): SupabasePublicConfig | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return null;
+  return { url, anonKey };
+}
 
 // Server-side Supabase client (reads auth from cookies). Null when unconfigured.
 export async function getSupabaseServer() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
+  const config = getSupabasePublicConfig();
+  if (!config) return null;
 
   const cookieStore = await cookies();
-  return createServerClient(url, key, {
+  return createServerClient(config.url, config.anonKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (items) => {
