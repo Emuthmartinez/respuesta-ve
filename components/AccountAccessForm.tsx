@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 import type { SupabasePublicConfig } from '@/lib/supabase/client';
@@ -94,7 +94,41 @@ export function AccountAccessForm({ variant, nextPath, backHref, supabaseConfig 
   const [notice, setNotice] = useState<React.ReactNode>(null);
   const [loading, setLoading] = useState(false);
 
-  const redirectTo = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+  const redirectTo = () => `${window.location.origin}/auth/finish?next=${encodeURIComponent(nextPath)}`;
+
+  useEffect(() => {
+    const sb = getSupabaseBrowser(supabaseConfig);
+    if (!sb) return;
+
+    let mounted = true;
+    void sb.auth.getSession().then(async ({ data, error }) => {
+      if (!mounted) return;
+      if (error) {
+        console.error('access session check error:', error);
+        return;
+      }
+      if (!data.session) return;
+
+      const { data: userData, error: userError } = await sb.auth.getUser();
+      if (!mounted) return;
+      if (userError) {
+        console.error('access user lookup error:', userError);
+        return;
+      }
+      if (userData.user) window.location.replace(nextPath);
+    });
+
+    const {
+      data: { subscription },
+    } = sb.auth.onAuthStateChange((event, session) => {
+      if (event !== 'INITIAL_SESSION' && session?.user) window.location.replace(nextPath);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [nextPath, supabaseConfig]);
 
   async function withGoogle() {
     setErr('');
