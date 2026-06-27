@@ -9,14 +9,14 @@ const STR = {
   en: { signOut: 'Sign out' },
 } as const;
 
-export function SignOutButton() {
+export function SignOutButton({ redirectTo = '/voluntarios' }: { redirectTo?: string }) {
   const locale = useLocale();
   const s = STR[locale];
   const router = useRouter();
   async function signOut() {
     const sb = getSupabaseBrowser();
     if (sb) await sb.auth.signOut();
-    router.push('/voluntarios');
+    router.push(redirectTo);
     router.refresh();
   }
   return (

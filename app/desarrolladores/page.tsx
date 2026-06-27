@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { FederationNetwork } from '@/components/FederationNetwork';
 import { getLocale } from '@/lib/i18n-server';
+import { getSupabaseServer } from '@/lib/supabase/server';
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://respuestave.org';
 const SITE = BASE.replace(/\/$/, '');
@@ -40,7 +41,7 @@ const S = {
       ['Personas desaparecidas', 'Score local, match contra el índice vivo, ingest idempotente, búsqueda pública redacted y sincronización de cambios.'],
       ['Estado federado', 'Cada socio conserva su externalId y puede consultar señales canónicas cuando otra fuente actualiza una persona.'],
       ['Entidades de coordinación', 'Hospitales, refugios, centros de acopio, organizaciones, canales públicos, necesidades activas y recursos fuera de Venezuela.'],
-      ['Intake público', 'JSON, texto, CSV o listas de URLs entran a una cola restringida para revisión operativa antes de promover datos canónicos.'],
+      ['Intake autenticado', 'JSON, texto, CSV o listas de URLs entran con clave de socio a una cola restringida para revisión operativa antes de promover datos canónicos.'],
       ['Insignias de socios', 'Cualquier sitio puede verificar si un dominio pertenece a un socio federado y mostrar metadatos públicos de confianza.'],
       ['Contratos para agentes', 'El manifest, el discovery JSON, OpenAPI y el servidor MCP dan rutas consumibles por herramientas automatizadas.'],
     ],
@@ -88,15 +89,16 @@ const S = {
         title: 'Intake público restringido',
         rows: [
           ['GET', '/api/v1/public-intake', 'Público', 'Explica el contrato, límites y payload recomendado.', 'Útil para agentes antes de enviar datos no normalizados.'],
-          ['POST', '/api/v1/public-intake', 'Público', 'Envía JSON, texto, CSV o URLs a revisión operativa.', 'Máximo 5 MiB. Devuelve receipt 202; nada se publica automáticamente.'],
-          ['GET', '/api/v1/public-intake?id=', 'Público', 'Consulta el estado seguro de un receipt.', 'No devuelve el payload crudo ni contactos privados.'],
+          ['POST', '/api/v1/public-intake', 'Scope `ingest`', 'Envía JSON, texto, CSV o URLs a revisión operativa.', 'Máximo 5 MiB. Devuelve receipt 202; nada se publica automáticamente.'],
+          ['GET', '/api/v1/public-intake?id=', 'Scope `ingest`', 'Consulta el estado seguro de un receipt.', 'No devuelve el payload crudo ni contactos privados.'],
         ],
       },
     ],
     authTitle: 'Autenticación, límites y errores',
     authBullets: [
       'Scopes disponibles: `score`, `match`, `search`, `ingest`.',
-      'Los cuerpos JSON de endpoints de socio tienen límite de 256 KiB; public-intake acepta hasta 5 MiB.',
+      'Crea una cuenta en esta web para emitir una clave inicial; el equipo puede pausar, revocar o ajustar límites por cuenta.',
+      'Los cuerpos JSON de endpoints de socio tienen límite de 256 KiB; public-intake acepta hasta 5 MiB con scope `ingest`.',
       'Las respuestas exitosas de socio incluyen `X-RateLimit-Remaining-Minute` y `X-RateLimit-Remaining-Day`.',
       'Rate limit devuelve `429` con `Retry-After`; errores usan `{ "ok": false, "error": "..." }`.',
       'La fuente de ingest se toma de la clave de API, no del body. El campo `source` de `/persons` queda por compatibilidad.',
@@ -135,15 +137,18 @@ const S = {
     ],
     agentTitle: 'Contrato rápido para agentes',
     agentIntro:
-      'Si tu agente no conoce el dominio, empieza por el manifest. Si conoce la API, empieza por discovery y luego OpenAPI. Usa public-intake para formas desconocidas; usa `/persons` y `/entities` solo cuando tienes una clave y un registro canónico con link-back.',
+      'Si tu agente no conoce el dominio, empieza por el manifest. Si conoce la API, empieza por discovery y luego OpenAPI. Usa public-intake con clave para formas desconocidas; usa `/persons` y `/entities` solo cuando tienes un registro canónico con link-back.',
     examplesTitle: 'Ejemplos copiables',
     mcpTitle: 'MCP para agentes',
     mcp:
-      'El servidor MCP incluido en este repo envuelve los flujos con clave de socio y la verificación de insignia. Para public-intake sin clave, llama la API HTTP directamente.',
+      'El servidor MCP incluido en este repo envuelve los flujos con clave de socio y la verificación de insignia. Para public-intake, llama la API HTTP con la misma clave de socio.',
     mcpToolsTitle: 'Herramientas MCP disponibles',
-    accessTitle: 'Solicitar una clave',
+    accessTitle: 'Crear cuenta y clave',
     access:
-      'Las claves las emite el equipo de coordinación. Incluye tu dominio, tipo de datos, volumen esperado y qué scopes necesitas.',
+      'Crea una cuenta, emite una clave y úsala desde tu servidor. La clave queda asociada a tu cuenta para poder pausar, revocar o ajustar límites si hace falta.',
+    accessCta: 'Crear cuenta y clave',
+    accessSignedInCta: 'Ver mis claves',
+    accessSecondary: 'Las integraciones de confianza pueden pedir verificación y límites más altos cuando ya estén conectadas.',
     back: 'Volver al inicio',
   },
   en: {
@@ -165,7 +170,7 @@ const S = {
       ['Missing people', 'Local scoring, live-index matching, idempotent ingest, redacted public search, and changes sync.'],
       ['Federated status', 'Each partner keeps its own externalId and can read canonical signals when another source updates a person.'],
       ['Coordination entities', 'Hospitals, shelters, supply hubs, organizations, public channels, active needs, and resources outside Venezuela.'],
-      ['Public intake', 'JSON, text, CSV, or URL lists enter a restricted operator queue before any canonical promotion.'],
+      ['Authenticated intake', 'JSON, text, CSV, or URL lists enter a restricted operator queue with a partner key before any canonical promotion.'],
       ['Partner badges', 'Any site can verify whether a domain belongs to a federated partner and display public trust metadata.'],
       ['Agent contracts', 'The manifest, discovery JSON, OpenAPI, and MCP server provide routes that automated tools can consume.'],
     ],
@@ -213,15 +218,16 @@ const S = {
         title: 'Restricted public intake',
         rows: [
           ['GET', '/api/v1/public-intake', 'Public', 'Explain the contract, limits, and recommended payload.', 'Useful for agents before sending unnormalized data.'],
-          ['POST', '/api/v1/public-intake', 'Public', 'Submit JSON, text, CSV, or URLs for operator review.', 'Maximum 5 MiB. Returns a 202 receipt; nothing is published automatically.'],
-          ['GET', '/api/v1/public-intake?id=', 'Public', 'Read receipt-safe processing status.', 'Does not return the raw payload or private contacts.'],
+          ['POST', '/api/v1/public-intake', 'Scope `ingest`', 'Submit JSON, text, CSV, or URLs for operator review.', 'Maximum 5 MiB. Returns a 202 receipt; nothing is published automatically.'],
+          ['GET', '/api/v1/public-intake?id=', 'Scope `ingest`', 'Read receipt-safe processing status.', 'Does not return the raw payload or private contacts.'],
         ],
       },
     ],
     authTitle: 'Authentication, limits, and errors',
     authBullets: [
       'Available scopes: `score`, `match`, `search`, `ingest`.',
-      'Partner JSON bodies are capped at 256 KiB; public-intake accepts up to 5 MiB.',
+      'Create an account on this site to issue an initial key; the team can pause, revoke, or adjust limits per account.',
+      'Partner JSON bodies are capped at 256 KiB; public-intake accepts up to 5 MiB with scope `ingest`.',
       'Successful partner responses include `X-RateLimit-Remaining-Minute` and `X-RateLimit-Remaining-Day`.',
       'Rate limiting returns `429` with `Retry-After`; errors use `{ "ok": false, "error": "..." }`.',
       'Ingest source attribution comes from the API key, not the body. `/persons` keeps `source` only for compatibility.',
@@ -260,15 +266,18 @@ const S = {
     ],
     agentTitle: 'Quick contract for agents',
     agentIntro:
-      'If your agent does not know the domain, start from the manifest. If it knows the API, start from discovery and then OpenAPI. Use public-intake for unknown shapes; use `/persons` and `/entities` only when you have a key and a canonical source record with a link-back.',
+      'If your agent does not know the domain, start from the manifest. If it knows the API, start from discovery and then OpenAPI. Use public-intake with a key for unknown shapes; use `/persons` and `/entities` only when you have a canonical source record with a link-back.',
     examplesTitle: 'Copyable examples',
     mcpTitle: 'MCP for agents',
     mcp:
-      'The MCP server included in this repo wraps partner-key workflows and badge verification. For public-intake without a key, call the HTTP API directly.',
+      'The MCP server included in this repo wraps partner-key workflows and badge verification. For public-intake, call the HTTP API with the same partner key.',
     mcpToolsTitle: 'Available MCP tools',
-    accessTitle: 'Request a key',
+    accessTitle: 'Create account and key',
     access:
-      'Keys are issued by the coordination team. Include your domain, data type, expected volume, and requested scopes.',
+      'Create an account, issue a key, and use it from your server. The key stays tied to your account so access can be paused, revoked, or rate-limited if needed.',
+    accessCta: 'Create account and key',
+    accessSignedInCta: 'View my keys',
+    accessSecondary: 'Trusted integrations can request verification and higher limits once they are connected.',
     back: 'Back to home',
   },
 } as const;
@@ -297,6 +306,10 @@ const inlineCodeCls = 'rounded bg-black/5 px-1.5 py-0.5 font-mono text-[0.85em] 
 export default async function DesarrolladoresPage() {
   const locale = await getLocale();
   const s = S[locale];
+  const sb = await getSupabaseServer();
+  const {
+    data: { user },
+  } = sb ? await sb.auth.getUser() : { data: { user: null } };
 
   const agentContract = JSON.stringify({
     eventId: 'venezuela-earthquakes-2026',
@@ -310,9 +323,8 @@ export default async function DesarrolladoresPage() {
       'GET /federation.instance.json',
       'GET /api/v1/badge?domain=',
       'GET /api/v1/public-intake',
-      'POST /api/v1/public-intake',
-      'GET /api/v1/public-intake?id=',
     ],
+    keyManagement: '/desarrolladores/claves',
     partnerAuth: ['Authorization: Bearer $RVK_API_KEY', 'x-api-key: $RVK_API_KEY'],
     scopes: {
       score: ['POST /api/v1/score'],
@@ -324,7 +336,7 @@ export default async function DesarrolladoresPage() {
         'GET /api/v1/entities',
         'GET /api/v1/entities/changes',
       ],
-      ingest: ['POST /api/v1/persons', 'POST /api/v1/entities'],
+      ingest: ['POST /api/v1/persons', 'POST /api/v1/entities', 'POST /api/v1/public-intake', 'GET /api/v1/public-intake?id='],
     },
     syncRules: [
       'Treat matches as advisory; never auto-merge people.',
@@ -375,6 +387,7 @@ export default async function DesarrolladoresPage() {
   }'`;
 
   const publicIntakeCurl = `curl -s ${API}/public-intake \\
+  -H "Authorization: Bearer $RVK_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
     "eventId": "venezuela-earthquakes-2026",
@@ -564,12 +577,21 @@ export default async function DesarrolladoresPage() {
       <section className="mt-10 rounded-lg border border-black/10 p-5 dark:border-white/10">
         <h2 className="text-xl font-semibold">{s.accessTitle}</h2>
         <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{s.access}</p>
-        <a
-          href="mailto:api@respuestave.org?subject=Respuesta%20VE%20API%20access"
-          className="mt-3 inline-block font-medium text-red-600 hover:underline"
-        >
-          api@respuestave.org →
-        </a>
+        <div className="mt-4 flex flex-wrap gap-3 text-sm">
+          <Link
+            href={user ? '/desarrolladores/claves' : '/desarrolladores/acceder'}
+            className="rounded-md bg-red-600 px-3 py-1.5 font-medium text-white hover:bg-red-700"
+          >
+            {user ? s.accessSignedInCta : s.accessCta} →
+          </Link>
+          <a
+            href="mailto:api@respuestave.org?subject=Respuesta%20VE%20API%20verification"
+            className="rounded-md border border-black/15 px-3 py-1.5 font-medium hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/5"
+          >
+            api@respuestave.org →
+          </a>
+        </div>
+        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{s.accessSecondary}</p>
       </section>
 
       <div className="mt-10">

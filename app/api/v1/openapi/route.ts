@@ -172,7 +172,7 @@ const ENTITY_OUT = {
 } as const;
 
 const PUBLIC_INTAKE_REQUEST = {
-  description: 'Any JSON value or raw text/CSV/url-list payload. Operators review this restricted queue before creating canonical records. Recommended JSON wrappers may include sourceRecordId, contentFingerprint, processingHints, and canonicalCandidates so operators can dedupe/clean and promote via /persons or /entities without losing source provenance.',
+  description: 'Any JSON value or raw text/CSV/url-list payload from an authenticated partner key. Operators review this restricted queue before creating canonical records. Recommended JSON wrappers may include sourceRecordId, contentFingerprint, processingHints, and canonicalCandidates so operators can dedupe/clean and promote via /persons or /entities without losing source provenance.',
   oneOf: [
     { type: 'object', additionalProperties: true },
     { type: 'array', items: true },
@@ -213,7 +213,7 @@ const SPEC = {
   openapi: '3.1.0',
   info: {
     title: 'Respuesta VE — Humanitarian Federation API',
-    version: '1.2.0',
+    version: '1.3.0',
     description:
       'Match and deduplicate missing-person records, and federate verified crisis entities for the 2026 Venezuela earthquake response. ' +
       'PII policy: cédula and photo hashes are used only to FIND matches and are never returned; responses carry only the ' +
@@ -227,7 +227,7 @@ const SPEC = {
   security: [{ ApiKeyAuth: [] }],
   components: {
     securitySchemes: {
-      ApiKeyAuth: { type: 'http', scheme: 'bearer', description: 'Partner API key: `Authorization: Bearer rvk_…` (or `x-api-key`). Per-key rate limits apply (HTTP 429 with Retry-After). Scopes: score, match, search, ingest.' },
+      ApiKeyAuth: { type: 'http', scheme: 'bearer', description: 'Partner API key: `Authorization: Bearer rvk_…` (or `x-api-key`). Create one from `/desarrolladores/claves` after signing in. Per-key rate limits apply (HTTP 429 with Retry-After). Scopes: score, match, search, ingest.' },
     },
     schemas: {
       PersonInput: PERSON_INPUT,
@@ -386,17 +386,17 @@ const SPEC = {
     '/public-intake': {
       get: {
         summary: 'Explain the public intake queue or poll receipt status.',
-        description: 'Without id, returns help payload with limits and an example. With id, returns a receipt-safe processing status.',
+        description: 'Without id, returns help payload with limits and an example. With id, requires an API key and returns receipt-safe processing status.',
         security: [],
         parameters: [
           { name: 'id', in: 'query', required: false, schema: { type: 'string', format: 'uuid' }, description: 'Receipt id from POST /public-intake.' },
         ],
-        responses: { '200': { description: 'Endpoint help or PublicIntakeReceipt.' }, '404': { description: 'Receipt not found.' } },
+        responses: { '200': { description: 'Endpoint help or PublicIntakeReceipt.' }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { description: 'Receipt not found.' } },
       },
       post: {
         summary: 'Submit any public lead/data shape for restricted operator review.',
-        description: 'Use this when a volunteer, Discord community, scraper, or partner needs to send data for restricted operator review. The raw payload is stored in a restricted queue. Include sourceRecordId/contentFingerprint/canonicalCandidates when available; operators use those restricted hints for dedupe and cleanup, then promote through /persons or /entities. The response is only a receipt; nothing is public or canonical until reviewed.',
-        security: [],
+        description: 'Use this when a partner site, Discord community bot, scraper, or integration needs to send data for restricted operator review. The raw payload is stored in a restricted queue. Include sourceRecordId/contentFingerprint/canonicalCandidates when available; operators use those restricted hints for dedupe and cleanup, then promote through /persons or /entities. The response is only a receipt; nothing is public or canonical until reviewed.',
+        security: [{ ApiKeyAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -441,6 +441,7 @@ const SPEC = {
         },
         responses: {
           '202': { description: 'Received for review.', content: { 'application/json': { schema: { $ref: '#/components/schemas/PublicIntakeReceipt' } } } },
+          '401': { $ref: '#/components/responses/Unauthorized' },
           '400': { $ref: '#/components/responses/Invalid' },
           '413': { description: 'Payload over 5 MiB.' },
           '429': { $ref: '#/components/responses/RateLimited' },

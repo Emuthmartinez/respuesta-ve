@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { apiError } from '@/lib/api/auth';
+import { authenticate, apiError, type AuthOk } from '@/lib/api/auth';
 import {
   buildPublicIntakeSubmission,
   MAX_PUBLIC_INTAKE_BODY_BYTES,
@@ -32,14 +33,24 @@ function withStatusUrl(req: Request, receipt: IntakeReceipt): IntakeReceipt {
   return url ? { ...receipt, statusUrl: url } : receipt;
 }
 
+function withRateHeaders(auth: AuthOk): HeadersInit {
+  return {
+    'Cache-Control': 'no-store',
+    'X-RateLimit-Remaining-Minute': String(auth.remainingMin),
+    'X-RateLimit-Remaining-Day': String(auth.remainingDay),
+  };
+}
+
 function publicIntakeRpcSecret(): string | null {
   const secret = process.env.PUBLIC_INTAKE_RPC_SECRET?.trim();
   return secret || null;
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const id = new URL(req.url).searchParams.get('id');
   if (id) {
+    const auth = await authenticate(req, 'ingest');
+    if (!auth.ok) return apiError(auth.error, auth.status, undefined, auth.retryAfter);
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
       return apiError('bad_id', 400);
     }
@@ -49,14 +60,15 @@ export async function GET(req: Request) {
     if (error) return apiError('receipt_unavailable', 503);
     const receipt = data as IntakeReceipt | null;
     if (!receipt?.ok) return apiError(receipt?.error ?? 'not_found', receipt?.error === 'not_found' ? 404 : 400);
-    return NextResponse.json(withStatusUrl(req, receipt), { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json(withStatusUrl(req, receipt), { headers: withRateHeaders(auth) });
   }
 
   return NextResponse.json({
     ok: true,
     endpoint: 'POST /api/v1/public-intake',
     statusEndpoint: 'GET /api/v1/public-intake?id=<receipt-id>',
-    access: 'Public submission route for restricted operator review.',
+    access: 'Authenticated partner submission route for restricted operator review.',
+    authentication: 'Use Authorization: Bearer <rvk_...> or x-api-key. Create a key at /desarrolladores/claves after signing in.',
     maxBytes: MAX_PUBLIC_INTAKE_BODY_BYTES,
     accepts: ['application/json', 'text/plain', 'text/csv', 'JSON envelopes with small file data URLs/text extracts'],
     status: 'received_for_review',
@@ -99,7 +111,10 @@ export async function GET(req: Request) {
   }, { headers: { 'Cache-Control': 'public, max-age=300' } });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await authenticate(req, 'ingest');
+  if (!auth.ok) return apiError(auth.error, auth.status, undefined, auth.retryAfter);
+
   const parsed = await readPublicIntakePayload(req);
   if (!parsed.ok) {
     const status = parsed.error === 'payload_too_large' ? 413 : 400;
@@ -107,6 +122,10 @@ export async function POST(req: Request) {
   }
 
   const submission = buildPublicIntakeSubmission(parsed.payload, parsed.rawText, parsed.contentType);
+  const source =
+    submission.source === 'anonymous-public-intake'
+      ? (auth.ingestSource !== 'other' ? auth.ingestSource : (auth.name || submission.source).slice(0, 120))
+      : submission.source;
   const sb = await getSupabaseServer();
   if (!sb) return apiError('service_unavailable', 503);
   const rpcSecret = publicIntakeRpcSecret();
@@ -116,9 +135,9 @@ export async function POST(req: Request) {
     p_rpc_secret: rpcSecret,
     p_ip_hash: ipHash(req),
     p_event_id: submission.eventId,
-    p_source: submission.source,
+    p_source: source,
     p_source_url: submission.sourceUrl,
-    p_received_via: submission.receivedVia,
+    p_received_via: 'authenticated_public_api',
     p_payload_format: submission.payloadFormat,
     p_submission_kind: submission.submissionKind,
     p_payload: submission.payload,
@@ -139,5 +158,5 @@ export async function POST(req: Request) {
     return apiError(code, code === 'rate_limited' ? 429 : code === 'forbidden' ? 503 : 400);
   }
 
-  return NextResponse.json(withStatusUrl(req, result), { status: 202, headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json(withStatusUrl(req, result), { status: 202, headers: withRateHeaders(auth) });
 }

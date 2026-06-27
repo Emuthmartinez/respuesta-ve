@@ -9,6 +9,7 @@ const ALLOWED_NEXT = new Set([
   '/voluntarios/registrarse',
   '/voluntarios/moderacion',
   '/voluntarios/responders',
+  '/desarrolladores/claves',
 ]);
 
 export async function GET(request: Request) {
