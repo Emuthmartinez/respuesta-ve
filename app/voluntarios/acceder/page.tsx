@@ -1,7 +1,16 @@
+import { redirect } from 'next/navigation';
 import { AccountAccessForm } from '@/components/AccountAccessForm';
-import { getSupabasePublicConfig } from '@/lib/supabase/server';
+import { getSupabasePublicConfig, getSupabaseServer } from '@/lib/supabase/server';
 
-export default function AccederPage() {
+export default async function AccederPage() {
+  const sb = await getSupabaseServer();
+  if (sb) {
+    const {
+      data: { user },
+    } = await sb.auth.getUser();
+    if (user) redirect('/voluntarios');
+  }
+
   return (
     <AccountAccessForm
       variant="volunteer"

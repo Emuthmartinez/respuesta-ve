@@ -5,10 +5,17 @@ import { LangToggle } from '@/components/LangToggle';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { MobileNav, type NavItem } from '@/components/MobileNav';
 import { ContextSwitch } from '@/components/ContextSwitch';
+import { AuthStatus } from '@/components/AuthStatus';
+import { getSupabasePublicConfig, getSupabaseServer } from '@/lib/supabase/server';
 
 export async function Header() {
   const locale = await getLocale();
   const d = t(locale);
+  const supabaseConfig = getSupabasePublicConfig();
+  const sb = await getSupabaseServer();
+  const {
+    data: { user },
+  } = sb ? await sb.auth.getUser() : { data: { user: null } };
 
   // ctx 'in' = shown only to visitors in Venezuela, 'out' = only abroad,
   // undefined = both. Array order is display order; hidden items collapse.
@@ -52,6 +59,7 @@ export async function Header() {
           <ContextSwitch />
           <LangToggle locale={locale} />
           <ThemeToggle />
+          <AuthStatus initialEmail={user?.email} supabaseConfig={supabaseConfig} />
         </nav>
 
         {/* Mobile right side: toggles + hamburger */}
@@ -59,7 +67,9 @@ export async function Header() {
           <ContextSwitch />
           <LangToggle locale={locale} />
           <ThemeToggle />
-          <MobileNav nav={NAV} />
+          <MobileNav nav={NAV}>
+            <AuthStatus initialEmail={user?.email} mode="mobile" supabaseConfig={supabaseConfig} />
+          </MobileNav>
         </div>
       </div>
     </header>
