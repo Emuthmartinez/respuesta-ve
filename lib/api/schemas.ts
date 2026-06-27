@@ -89,6 +89,7 @@ export const CHANNEL_TYPES = [
   'whatsapp_public', 'email_public', 'social', 'other',
 ] as const;
 export const URGENCIES = ['critical', 'high', 'normal', 'low'] as const;
+export const ENTITY_AUDIENCE_SCOPES = ['in_venezuela', 'outside_venezuela', 'both'] as const;
 
 export const EntityChannelInput = z.object({
   type: z.enum(CHANNEL_TYPES),
@@ -118,6 +119,8 @@ export const CoordinationEntityInput = z.object({
   description: optStr(900),
   estado: optStr(80),
   municipio: optStr(120),
+  audienceScope: z.enum(ENTITY_AUDIENCE_SCOPES).nullish(),
+  countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).nullish(),
   lat: z.number().min(-90).max(90).nullish(),
   lng: z.number().min(-180).max(180).nullish(),
   address: optStr(300),
@@ -138,6 +141,8 @@ export const EntityQuery = z.object({
   q: z.string().trim().min(2).max(120).nullish(),
   kind: z.enum(ENTITY_KINDS).nullish(),
   estado: z.string().trim().min(1).max(80).nullish(),
+  audienceScope: z.enum(ENTITY_AUDIENCE_SCOPES).nullish(),
+  countryCode: z.string().trim().length(2).transform((value) => value.toUpperCase()).nullish(),
   limit: z.number().int().min(1).max(100).default(25),
 }).strict();
 

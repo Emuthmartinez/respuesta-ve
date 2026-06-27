@@ -1,4 +1,4 @@
-// GET /api/v1 — discovery (no auth). Points agents/partners at the spec.
+// GET /api/v1 — discovery. Points agents/partners at the spec.
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-static';
@@ -6,7 +6,7 @@ export const dynamic = 'force-static';
 export function GET() {
   return NextResponse.json({
     name: 'Respuesta VE — Humanitarian Federation API',
-    version: '1.1.0',
+    version: '1.2.0',
     openapi: '/api/v1/openapi',
     endpoints: {
       score: 'POST /api/v1/score — pure scoring on caller-supplied records',
@@ -18,10 +18,10 @@ export function GET() {
       entities: 'POST/GET /api/v1/entities — federate/search verified hospitals, shelters, orgs, needs, and channels',
       entityChanges: 'GET /api/v1/entities/changes?since= — changed verified crisis entities for sync',
       badge: 'GET /api/v1/badge?domain= — public partner verification badge lookup',
-      publicIntake: 'POST /api/v1/public-intake — public intake queue for JSON/text/CSV/url-list data that operators should review',
+      publicIntake: 'POST /api/v1/public-intake — intake queue for JSON/text/CSV/url-list data that operators should review',
     },
-    auth: 'Partner endpoints use Authorization: Bearer <api-key> (or x-api-key). /public-intake and /badge require no key.',
+    auth: 'Partner endpoints use Authorization: Bearer <api-key> (or x-api-key). See the OpenAPI spec for endpoint-specific access.',
     scopes: ['score', 'match', 'search', 'ingest'],
-    pii_policy: 'Cédula and photo hashes are used only to find matches and are NEVER returned. Entity responses carry verified public metadata, fuzzed coordinates, needs, public channels, and link-backs only. Grouping is advisory; records are never destructively merged. Status sync is timestamp-aware to avoid stale overwrites.',
+    pii_policy: 'Cédula and photo hashes are used only to find matches and are NEVER returned. Entity responses carry verified public metadata, fuzzed coordinates, needs, public channels, audience/country grouping, and link-backs only. Grouping is advisory; records are never destructively merged. Status sync is timestamp-aware to avoid stale overwrites.',
   });
 }

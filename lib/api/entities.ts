@@ -5,7 +5,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const ENTITY_SELECT =
-  'id, entity_kind, name, description, estado, municipio, lat, lng, source, source_url, last_verified_at, source_updated_at, created_at, updated_at';
+  'id, entity_kind, name, description, estado, municipio, lat, lng, source, source_url, last_verified_at, source_updated_at, created_at, updated_at, audience_scope, country_code';
 const CHANNEL_SELECT =
   'id, entity_id, channel_type, label, url, display_text, instructions, is_primary, source_updated_at, created_at, updated_at';
 const NEED_SELECT =
@@ -26,6 +26,8 @@ export interface EntityRow {
   source_updated_at: string | null;
   created_at: string;
   updated_at: string;
+  audience_scope: string | null;
+  country_code: string | null;
 }
 
 interface ChannelRow {
@@ -98,6 +100,8 @@ export interface PublicEntity {
   lastVerifiedAt: string | null;
   sourceUpdatedAt: string | null;
   updatedAt: string;
+  audienceScope: string | null;
+  countryCode: string | null;
   channels: PublicChannel[];
   needs: PublicNeed[];
 }
@@ -129,6 +133,8 @@ export function redactEntity(row: EntityRow, channels: ChannelRow[], needs: Need
     lastVerifiedAt: row.last_verified_at,
     sourceUpdatedAt: row.source_updated_at,
     updatedAt: row.updated_at,
+    audienceScope: row.audience_scope,
+    countryCode: row.country_code,
     channels: channels.map((c) => ({
       id: c.id,
       type: c.channel_type,
@@ -177,7 +183,14 @@ async function hydrateEntities(sb: SupabaseClient, rows: EntityRow[]): Promise<P
 
 export async function searchEntities(
   sb: SupabaseClient,
-  opts: { q?: string | null; kind?: string | null; estado?: string | null; limit: number },
+  opts: {
+    q?: string | null;
+    kind?: string | null;
+    estado?: string | null;
+    audienceScope?: string | null;
+    countryCode?: string | null;
+    limit: number;
+  },
 ): Promise<PublicEntity[]> {
   let query = sb.from('coordination_entities_public').select(ENTITY_SELECT);
   if (opts.q) {
@@ -187,6 +200,8 @@ export async function searchEntities(
   }
   if (opts.kind) query = query.eq('entity_kind', opts.kind);
   if (opts.estado) query = query.eq('estado', opts.estado);
+  if (opts.audienceScope) query = query.eq('audience_scope', opts.audienceScope);
+  if (opts.countryCode) query = query.eq('country_code', opts.countryCode);
   const { data, error } = await query.order('updated_at', { ascending: false }).limit(opts.limit);
   if (error) throw new Error('entity_search_failed');
   return hydrateEntities(sb, (data as EntityRow[]) ?? []);

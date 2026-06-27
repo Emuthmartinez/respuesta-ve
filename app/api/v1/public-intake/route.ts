@@ -82,6 +82,8 @@ export async function GET(req: Request) {
           name: 'Hospital Central',
           estado: 'Lara',
           municipio: 'Barquisimeto',
+          audienceScope: 'in_venezuela',
+          countryCode: 'VE',
           needs: [{ category: 'medical_supplies', title: 'Gasas', urgency: 'high' }],
         },
       }],
